@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 
 import "./interfaces/IPerpetualBondVault.sol";
 import "./interfaces/IPerpetualBondFactory.sol";
+import "./interfaces/IPerpetualBondStaking.sol";
 import "./PerpetualBondToken.sol";
-import "./PerpetualBondStaking.sol";
 import "./PerpetualBondDeployer.sol";
 import "../erc20/SafeERC20.sol";
 import "../erc20/ERC20.sol";
@@ -23,7 +23,7 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
     address public immutable override token;
     address public immutable override dToken;
     address public immutable override yToken;
-    address public immutable override staking;
+    address public override staking;
     uint256 public override totalDeposits;
 
     constructor() {
@@ -46,10 +46,6 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
                 string(abi.encodePacked(tokenSymbol, "-Y")),
                 decimals
             )
-        );
-
-        staking = address(
-            new PerpetualBondStaking{salt: keccak256(abi.encode(token))}(factory, yToken, token)
         );
     }
 
@@ -105,13 +101,16 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
 
     /**
      * @notice Collects pending rebase rewards and sends to staking contract to distribute
+     * @dev Will return if `staking` or pending rewards is 0
      */
     function harvest() external override nonReentrant {
+        if (staking == address(0)) return;
+
         uint256 amount = pendingRewards();
         if (amount == 0) return;
 
         ERC20(token).safeTransfer(staking, amount);
-        PerpetualBondStaking(staking).distribute();
+        IPerpetualBondStaking(staking).distribute();
 
         emit Harvest(amount);
     }
@@ -123,13 +122,21 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
      */
     function _chargeFee(uint256 amount) internal returns (uint256 feeAmount) {
         (address feeTo, uint256 fee) = IPerpetualBondFactory(factory).feeInfo();
-        if (feeTo == address(0) || fee == 0) {
-            return 0;
-        }
+        if (feeTo == address(0) || fee == 0) return 0;
 
         feeAmount = (amount * fee) / 10000;
         ERC20(token).safeTransfer(feeTo, feeAmount);
 
         return feeAmount;
+    }
+
+    //////////////////////////
+    /* Restricted Functions */
+    //////////////////////////
+
+    function setStaking(address _staking) external {
+        require(msg.sender == factory, "!factory");
+
+        staking = _staking;
     }
 }

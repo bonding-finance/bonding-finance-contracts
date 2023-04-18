@@ -18,18 +18,21 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
     address public immutable override factory;
     address public immutable override vault;
     address public immutable override yToken;
-    address public override lpToken;
+    address public immutable override lpToken;
     address public immutable override rewardToken;
     uint256 public override fees;
 
     mapping(address => mapping(address => UserInfo)) public override userInfo;
     mapping(address => PoolInfo) public override poolInfo;
 
-    constructor(address _factory, address _yToken, address _rewardToken) {
-        vault = msg.sender;
-        factory = _factory;
-        yToken = _yToken;
-        rewardToken = _rewardToken;
+    constructor(address _vault, address _lpToken) {
+        require(_vault != address(0));
+        require(_lpToken != address(0));
+        factory = IPerpetualBondVault(_vault).factory();
+        vault = _vault;
+        yToken = IPerpetualBondVault(_vault).yToken();
+        lpToken = _lpToken;
+        rewardToken = IPerpetualBondVault(_vault).token();
     }
 
     /**
@@ -88,6 +91,22 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
     }
 
     /**
+     * @notice Emergency withdraw `token`
+     * @dev Does not claim rewards
+     * @param token Token to withdraw
+     */
+    function emergencyWithdraw(address token) external override nonReentrant {
+        UserInfo storage user = userInfo[msg.sender][token];
+        uint256 amount = user.amount;
+        ERC20(token).safeTransfer(msg.sender, amount);
+
+        user.amount = 0;
+        user.rewardDebt = 0;
+
+        emit Unstake(msg.sender, token, amount);
+    }
+
+    /**
      * Calculates the total amount of rewards accrued
      * @return totalRewards Total rewards accrued
      */
@@ -138,12 +157,6 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
     //////////////////////////
     /* Restricted Functions */
     //////////////////////////
-
-    function setLpToken(address _lpToken) external {
-        require(msg.sender == factory, "!factory");
-
-        lpToken = _lpToken;
-    }
 
     /**
      * @notice Distributes rebase rewards from vault to stakers

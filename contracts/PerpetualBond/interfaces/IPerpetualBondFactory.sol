@@ -27,7 +27,7 @@ interface IPerpetualBondFactory {
 
     function createBond(address token) external returns (address bond);
 
-    function setLpToken(address staking, address lpToken) external;
+    function setStaking(address bond, address staking) external;
 
     function collectFees(address staking) external;
 

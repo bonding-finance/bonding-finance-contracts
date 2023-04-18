@@ -4,19 +4,21 @@ const { constants } = ethers;
 const { expect } = require("chai");
 const { numToBN } = require("../util");
 
-describe("Perpetual Bonds", function () {
+describe("Perpetual bond vault", function () {
     async function deployFixture() {
         const accounts = await ethers.getSigners();
         const Factory = await ethers.getContractFactory("PerpetualBondFactory");
         const factory = await Factory.deploy();
         const StETH = await ethers.getContractFactory("stETH");
         const stETH = await StETH.deploy(0);
+        const LpToken = await ethers.getContractFactory("LpToken");
+        const lpToken = await LpToken.deploy(0);
 
-        return { factory, stETH, accounts };
+        return { factory, stETH, lpToken, accounts };
     }
 
     async function createBond() {
-        const { factory, stETH, accounts } = await loadFixture(deployFixture);
+        const { factory, stETH, lpToken, accounts } = await loadFixture(deployFixture);
         await factory.createBond(stETH.address);
         const bondAddress = await factory.getBond(stETH.address);
         const Vault = await ethers.getContractFactory("PerpetualBondVault");
@@ -25,7 +27,7 @@ describe("Perpetual Bonds", function () {
         const dToken = BondToken.attach(await vault.dToken());
         const yToken = BondToken.attach(await vault.yToken());
         const Staking = await ethers.getContractFactory("PerpetualBondStaking");
-        const staking = Staking.attach(await vault.staking());
+        const staking = await Staking.deploy(vault.address, lpToken.address);
         const [owner, other] = accounts;
         for (const account of [owner, other]) {
             await stETH.connect(account).mint(account.address, numToBN(100));
@@ -61,8 +63,7 @@ describe("Perpetual Bonds", function () {
             });
 
             it("Should mint yToken with fee", async function () {
-                const { factory, stETH, owner, other, vault, dToken, yToken } =
-                    await createBond();
+                const { factory, stETH, owner, other, vault, dToken, yToken } = await createBond();
                 await factory.setFeeTo(other.address);
                 await factory.setFee(100);
                 await vault.mint(numToBN(10));
@@ -110,8 +111,7 @@ describe("Perpetual Bonds", function () {
             });
 
             it("Should redeem yToken with fee", async function () {
-                const { factory, stETH, owner, other, vault, dToken, yToken } =
-                    await createBond();
+                const { factory, stETH, owner, other, vault, dToken, yToken } = await createBond();
                 await vault.mint(numToBN(10));
                 await factory.setFeeTo(other.address);
                 await factory.setFee(100);
@@ -161,11 +161,18 @@ describe("Perpetual Bonds", function () {
                 const { vault } = await createBond();
                 await expect(vault.harvest()).to.not.emit(vault, "Harvest");
             });
+
+            it("Should not call distribute() if staking is 0", async function () {
+                const { vault } = await createBond();
+                await vault.mint(numToBN(10));
+                await expect(vault.harvest()).to.not.emit(vault, "Harvest");
+            });
         });
 
         describe("Success", function () {
             it("Should harvest", async function () {
-                const { stETH, yToken, vault, staking } = await createBond();
+                const { factory, stETH, yToken, vault, staking } = await createBond();
+                await factory.setStaking(vault.address, staking.address);
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(10));
                 await stETH.mint(vault.address, numToBN(1));
@@ -176,13 +183,12 @@ describe("Perpetual Bonds", function () {
 
         describe("Events", function () {
             it("Should emit Harvest", async function () {
-                const { stETH, yToken, vault, staking } = await createBond();
+                const { factory, stETH, yToken, vault, staking } = await createBond();
+                await factory.setStaking(vault.address, staking.address);
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(10));
                 await stETH.mint(vault.address, numToBN(1));
-                await expect(vault.harvest())
-                    .to.emit(vault, "Harvest")
-                    .withArgs(numToBN(1));
+                await expect(vault.harvest()).to.emit(vault, "Harvest").withArgs(numToBN(1));
             });
         });
     });

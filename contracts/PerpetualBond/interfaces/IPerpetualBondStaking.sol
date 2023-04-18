@@ -52,6 +52,8 @@ interface IPerpetualBondStaking {
 
     function unstake(address token, uint256 amount) external;
 
+    function emergencyWithdraw(address token) external;
+
     //////////////////////////
     /* Restricted Functions */
     //////////////////////////

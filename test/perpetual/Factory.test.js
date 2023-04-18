@@ -4,7 +4,7 @@ const { constants } = ethers;
 const { expect } = require("chai");
 const { numToBN } = require("../util");
 
-describe("Factory", function () {
+describe("Perpetual bond factory", function () {
     async function deployFixture() {
         const [owner, other] = await ethers.getSigners();
         const Factory = await ethers.getContractFactory("PerpetualBondFactory");
@@ -21,21 +21,6 @@ describe("Factory", function () {
         it("Should set right owner", async function () {
             const { factory, owner } = await loadFixture(deployFixture);
             expect(await factory.owner()).to.equal(owner.address);
-        });
-    });
-
-    describe("setLpToken", function () {
-        it("Should set lp token", async function () {
-            const { factory, stETH, lpToken } = await loadFixture(deployFixture);
-            await factory.createBond(stETH.address);
-            const vaultAddress = await factory.getBond(stETH.address);
-            const Vault = await ethers.getContractFactory("PerpetualBondVault");
-            const vault = Vault.attach(vaultAddress);
-            const stakingAddress = await vault.staking();
-            await factory.setLpToken(stakingAddress, lpToken.address);
-            const Staking = await ethers.getContractFactory("PerpetualBondStaking");
-            const staking = Staking.attach(stakingAddress);
-            expect(await staking.lpToken()).to.equal(lpToken.address);
         });
     });
 
@@ -104,7 +89,7 @@ describe("Factory", function () {
                 expect(await vault.token()).to.equal(stETH.address);
                 expect(await vault.dToken()).to.not.equal(constants.AddressZero);
                 expect(await vault.yToken()).to.not.equal(constants.AddressZero);
-                expect(await vault.staking()).to.not.equal(constants.AddressZero);
+                expect(await vault.staking()).to.equal(constants.AddressZero);
                 const BondToken = await ethers.getContractFactory("PerpetualBondToken");
                 const dToken = BondToken.attach(await vault.dToken());
                 const yToken = BondToken.attach(await vault.yToken());

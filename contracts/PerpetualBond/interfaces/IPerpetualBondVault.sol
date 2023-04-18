@@ -29,4 +29,10 @@ interface IPerpetualBondVault {
     function redeem(uint256 amount) external returns (uint256 redeemAmount);
 
     function harvest() external;
+
+    //////////////////////////
+    /* Restricted Functions */
+    //////////////////////////
+
+    function setStaking(address staking) external;
 }
