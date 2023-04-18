@@ -1,6 +1,6 @@
 {
-    "name": "bonding-finance-v1",
-    "description": "Core smart contracts of Bonding Finance v1",
+    "name": "bonding-finance-contracts",
+    "description": "Bonding Finance smart contracts",
     "license": "BUSL-1.1",
     "version": "1.0.0",
     "homepage": "https://bonding.finance",
