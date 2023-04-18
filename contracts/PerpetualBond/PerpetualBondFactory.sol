@@ -32,11 +32,25 @@ contract PerpetualBondFactory is IPerpetualBondFactory, PerpetualBondDeployer, O
     function createBond(address token) external override onlyOwner returns (address bond) {
         require(token != address(0));
         require(getBond[token] == address(0), "Bond exists");
+
         bond = deploy(address(this), token);
         getBond[token] = bond;
         allBonds.push(bond);
 
         emit BondCreated(token, bond);
+    }
+
+    function setLpToken(address staking, address lpToken) external override onlyOwner {
+        require(staking != address(0));
+
+        PerpetualBondStaking(staking).setLpToken(lpToken);
+    }
+
+    function collectFees(address staking) external override onlyOwner {
+        require(staking != address(0));
+        require(feeInfo.feeTo != address(0), "feeTo is 0");
+
+        PerpetualBondStaking(staking).collectFees();
     }
 
     function setFeeTo(address feeTo) external override onlyOwner {
@@ -45,6 +59,7 @@ contract PerpetualBondFactory is IPerpetualBondFactory, PerpetualBondDeployer, O
 
     function setFee(uint256 fee) external override onlyOwner {
         require(fee <= 100, "Fee > 100");
+
         feeInfo.fee = fee;
     }
 }

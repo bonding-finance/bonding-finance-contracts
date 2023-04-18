@@ -157,14 +157,7 @@ describe("Perpetual Bonds", function () {
 
     describe("Harvest", function () {
         describe("Validations", function () {
-            it("Should not change if nothing staked", async function () {
-                const { stETH, vault } = await createBond();
-                await vault.mint(numToBN(10));
-                await stETH.mint(vault.address, numToBN(1));
-                await expect(vault.harvest()).to.be.revertedWith("totalStaked is 0");
-            });
-
-            it("Should not change accRewardsPerShare if pending rewards is 0", async function () {
+            it("Should not call distribute() if no pending rewards", async function () {
                 const { vault } = await createBond();
                 await expect(vault.harvest()).to.not.emit(vault, "Harvest");
             });
@@ -172,9 +165,9 @@ describe("Perpetual Bonds", function () {
 
         describe("Success", function () {
             it("Should harvest", async function () {
-                const { stETH, vault, staking } = await createBond();
+                const { stETH, yToken, vault, staking } = await createBond();
                 await vault.mint(numToBN(10));
-                await staking.stake(numToBN(10));
+                await staking.stake(yToken.address, numToBN(10));
                 await stETH.mint(vault.address, numToBN(1));
                 await vault.harvest();
                 expect(await vault.pendingRewards()).to.equal(0);
@@ -183,9 +176,9 @@ describe("Perpetual Bonds", function () {
 
         describe("Events", function () {
             it("Should emit Harvest", async function () {
-                const { stETH, vault, staking } = await createBond();
+                const { stETH, yToken, vault, staking } = await createBond();
                 await vault.mint(numToBN(10));
-                await staking.stake(numToBN(10));
+                await staking.stake(yToken.address, numToBN(10));
                 await stETH.mint(vault.address, numToBN(1));
                 await expect(vault.harvest())
                     .to.emit(vault, "Harvest")

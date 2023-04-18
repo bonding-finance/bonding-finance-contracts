@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.0;
 
+/**
+ * @title Perpetual bond factory interface
+ * @author Bonding Finance
+ */
 interface IPerpetualBondFactory {
     event BondCreated(address indexed token, address bond);
 
@@ -17,7 +21,15 @@ interface IPerpetualBondFactory {
 
     function allBondsLength() external view returns (uint256);
 
+    //////////////////////////
+    /* Restricted Functions */
+    //////////////////////////
+
     function createBond(address token) external returns (address bond);
+
+    function setLpToken(address staking, address lpToken) external;
+
+    function collectFees(address staking) external;
 
     function setFeeTo(address feeTo) external;
 

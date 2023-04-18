@@ -6,13 +6,15 @@ const { numToBN } = require("../util");
 
 describe("Factory", function () {
     async function deployFixture() {
-        const [owner, otherAccount] = await ethers.getSigners();
+        const [owner, other] = await ethers.getSigners();
         const Factory = await ethers.getContractFactory("PerpetualBondFactory");
         const factory = await Factory.deploy();
         const StETH = await ethers.getContractFactory("stETH");
         const stETH = await StETH.deploy(numToBN(100));
+        const LpToken = await ethers.getContractFactory("LpToken");
+        const lpToken = await LpToken.deploy(0);
 
-        return { factory, stETH, owner, otherAccount };
+        return { factory, stETH, lpToken, owner, other };
     }
 
     describe("Deployment", function () {
@@ -22,26 +24,39 @@ describe("Factory", function () {
         });
     });
 
+    describe("setLpToken", function () {
+        it("Should set lp token", async function () {
+            const { factory, stETH, lpToken } = await loadFixture(deployFixture);
+            await factory.createBond(stETH.address);
+            const vaultAddress = await factory.getBond(stETH.address);
+            const Vault = await ethers.getContractFactory("PerpetualBondVault");
+            const vault = Vault.attach(vaultAddress);
+            const stakingAddress = await vault.staking();
+            await factory.setLpToken(stakingAddress, lpToken.address);
+            const Staking = await ethers.getContractFactory("PerpetualBondStaking");
+            const staking = Staking.attach(stakingAddress);
+            expect(await staking.lpToken()).to.equal(lpToken.address);
+        });
+    });
+
     describe("setFeeTo", function () {
-        it("Should only allow owner", async function () {
-            const { factory, otherAccount } = await loadFixture(deployFixture);
-            await expect(
-                factory.connect(otherAccount).setFeeTo(otherAccount.address)
-            ).to.be.revertedWith("UNAUTHORIZED");
+        it("Should revert if !owner", async function () {
+            const { factory, other } = await loadFixture(deployFixture);
+            await expect(factory.connect(other).setFeeTo(other.address)).to.be.revertedWith(
+                "UNAUTHORIZED"
+            );
         });
         it("Should set feeTo", async function () {
-            const { factory, otherAccount } = await loadFixture(deployFixture);
-            await factory.setFeeTo(otherAccount.address);
-            expect((await factory.feeInfo()).feeTo).to.equal(otherAccount.address);
+            const { factory, other } = await loadFixture(deployFixture);
+            await factory.setFeeTo(other.address);
+            expect((await factory.feeInfo()).feeTo).to.equal(other.address);
         });
     });
 
     describe("setFee", function () {
-        it("Should only allow owner", async function () {
-            const { factory, otherAccount } = await loadFixture(deployFixture);
-            await expect(factory.connect(otherAccount).setFee(1)).to.be.revertedWith(
-                "UNAUTHORIZED"
-            );
+        it("Should revert if !owner", async function () {
+            const { factory, other } = await loadFixture(deployFixture);
+            await expect(factory.connect(other).setFee(1)).to.be.revertedWith("UNAUTHORIZED");
         });
 
         it("Should revert if fee > 100", async function () {
@@ -58,6 +73,13 @@ describe("Factory", function () {
 
     describe("Create perpetual bond", function () {
         describe("Validations", function () {
+            it("Should revert if !owner", async function () {
+                const { factory, other } = await loadFixture(deployFixture);
+                await expect(
+                    factory.connect(other).createBond(constants.AddressZero)
+                ).to.be.revertedWith("UNAUTHORIZED");
+            });
+
             it("Should revert if token address is 0", async function () {
                 const { factory } = await loadFixture(deployFixture);
                 await expect(factory.createBond(constants.AddressZero)).to.be.reverted;

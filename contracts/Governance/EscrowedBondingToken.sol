@@ -36,9 +36,7 @@ contract EscrowedBondingToken is IEscrowedBondingToken, ERC20, Owned {
     function vest(uint256 amount) external override {
         _claim(msg.sender);
 
-        if (amount == 0) {
-            return;
-        }
+        if (amount == 0) return;
 
         ERC20(address(this)).safeTransferFrom(msg.sender, address(this), amount);
         vestingInfo[msg.sender].vestingAmount += amount;

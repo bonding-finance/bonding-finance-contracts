@@ -3,76 +3,112 @@ pragma solidity ^0.8.0;
 
 import "./interfaces/IPerpetualBondStaking.sol";
 import "./interfaces/IPerpetualBondVault.sol";
+import "./interfaces/IPerpetualBondFactory.sol";
 import "../erc20/ERC20.sol";
 import "../erc20/SafeERC20.sol";
 import "../utils/ReentrancyGuard.sol";
 
 /**
- * @title Perpetual bond (yToken) staking contract
+ * @title Perpetual bond staking contract
  * @author Bonding Finance
  */
 contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
     using SafeERC20 for ERC20;
 
+    address public immutable override factory;
     address public immutable override vault;
     address public immutable override yToken;
-    address public immutable override reward;
-    uint256 public override accRewardsPerShare;
-    uint256 public override accRewards;
-    uint256 public override claimedRewards;
+    address public override lpToken;
+    address public immutable override rewardToken;
+    uint256 public override fees;
 
-    mapping(address => UserInfo) public override userInfo;
+    mapping(address => mapping(address => UserInfo)) public override userInfo;
+    mapping(address => PoolInfo) public override poolInfo;
 
-    constructor(address _yToken, address _reward) {
+    constructor(address _factory, address _yToken, address _rewardToken) {
         vault = msg.sender;
+        factory = _factory;
         yToken = _yToken;
-        reward = _reward;
+        rewardToken = _rewardToken;
     }
 
     /**
-     * @notice Calculates pending rewards for `_user`
+     * @notice Calculates `_user` pending rewards
      * @param _user Address of the user
+     * @param _token Address of the staked token
      * @return amount Amount of pending rewards for `_user`
      */
-    function pendingRewards(address _user) public view override returns (uint256 amount) {
-        UserInfo memory user = userInfo[_user];
-        amount = ((user.amount * accRewardsPerShare) / 1e18) - user.rewardDebt;
+    function pendingRewards(
+        address _user,
+        address _token
+    ) public view override returns (uint256 amount) {
+        UserInfo memory user = userInfo[_user][_token];
+        amount = ((user.amount * poolInfo[_token].accRewardsPerShare) / 1e18) - user.rewardDebt;
     }
 
     /**
-     * @notice Stakes `amount` yTokens for rewards
+     * @notice Stakes `amount` of `token`
      * @dev Harvests and claims rewards
-     * @param amount Amount of yTokens to stake
+     * @param token Token to stake
+     * @param amount Amount of tokens to stake
      */
-    function stake(uint256 amount) external override nonReentrant {
+    function stake(address token, uint256 amount) external override nonReentrant {
+        _validateToken(token);
         _harvestRewards();
-        _claimRewards(msg.sender);
+        _claimRewards(msg.sender, token);
 
-        UserInfo storage user = userInfo[msg.sender];
+        UserInfo storage user = userInfo[msg.sender][token];
         if (amount != 0) {
-            ERC20(yToken).safeTransferFrom(msg.sender, address(this), amount);
+            ERC20(token).safeTransferFrom(msg.sender, address(this), amount);
             user.amount += amount;
         }
-        user.rewardDebt = (user.amount * accRewardsPerShare) / 1e18;
+        user.rewardDebt = (user.amount * poolInfo[token].accRewardsPerShare) / 1e18;
 
-        emit Stake(msg.sender, amount);
+        emit Stake(msg.sender, token, amount);
     }
 
     /**
-     * @notice Unstakes `amount` of yTokens
+     * @notice Unstakes `amount` of `token`
      * @notice Harvests and claims rewards
-     * @param amount Amount of yTokens to unstake
+     * @notice token Token to unstake
+     * @param token Token to unstake
+     * @param amount Amount of tokens to unstake
      */
-    function unstake(uint256 amount) external override nonReentrant {
+    function unstake(address token, uint256 amount) external override nonReentrant {
+        _validateToken(token);
         _harvestRewards();
-        _claimRewards(msg.sender);
+        _claimRewards(msg.sender, token);
 
-        UserInfo storage user = userInfo[msg.sender];
+        UserInfo storage user = userInfo[msg.sender][token];
         user.amount -= amount;
-        user.rewardDebt = (user.amount * accRewardsPerShare) / 1e18;
-        ERC20(yToken).safeTransfer(msg.sender, amount);
+        user.rewardDebt = (user.amount * poolInfo[token].accRewardsPerShare) / 1e18;
+        ERC20(token).safeTransfer(msg.sender, amount);
 
-        emit Unstake(msg.sender, amount);
+        emit Unstake(msg.sender, token, amount);
+    }
+
+    /**
+     * Calculates the total amount of rewards accrued
+     * @return totalRewards Total rewards accrued
+     */
+    function _totalAccRewards() internal view returns (uint256 totalRewards) {
+        totalRewards = poolInfo[yToken].accRewards + poolInfo[lpToken].accRewards;
+    }
+
+    /**
+     * Calculates the total amount of claimed rewards
+     * @return totalClaimed Total rewards claimed
+     */
+    function _totalClaimedRewards() internal view returns (uint256 totalClaimed) {
+        totalClaimed = poolInfo[yToken].claimedRewards + poolInfo[lpToken].claimedRewards;
+    }
+
+    /**
+     * Validates `token` is a supported token
+     * @param token Token to validate
+     */
+    function _validateToken(address token) internal view {
+        require(token != address(0) && (token == yToken || token == lpToken), "!valid");
     }
 
     /**
@@ -85,38 +121,82 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
     /**
      * @notice Claims all pending rewards for `user`
      * @param user User to claim rewards for
+     * @param token Token to claim rewards for
      */
-    function _claimRewards(address user) internal {
-        if (userInfo[user].amount == 0) {
-            return;
-        }
+    function _claimRewards(address user, address token) internal {
+        if (userInfo[user][token].amount == 0) return;
 
-        uint256 pending = pendingRewards(user);
-        if (pending != 0) {
-            ERC20(reward).safeTransfer(user, pending);
-            claimedRewards += pending;
-        }
+        uint256 pending = pendingRewards(user, token);
+        if (pending == 0) return;
 
-        emit Claim(user, pending);
+        ERC20(rewardToken).safeTransfer(user, pending);
+        poolInfo[token].claimedRewards += pending;
+
+        emit Claim(user, token, pending);
     }
 
     //////////////////////////
     /* Restricted Functions */
     //////////////////////////
 
+    function setLpToken(address _lpToken) external {
+        require(msg.sender == factory, "!factory");
+
+        lpToken = _lpToken;
+    }
+
     /**
-     * @notice Distributes rebase rewards from vault to yToken stakers
-     * @dev Rebase rewards from unclaimed rewards are redistributed to stakers
+     * @notice Distributes rebase rewards from vault to stakers
+     * @dev Rebase rewards from unclaimed rewards are redistributed
      */
     function distribute() external override {
         require(msg.sender == vault, "!vault");
-        uint256 totalStaked = ERC20(yToken).balanceOf(address(this));
-        require(totalStaked != 0, "totalStaked is 0");
-        uint256 balance = ERC20(reward).balanceOf(address(this));
-        uint256 amount = balance + claimedRewards - accRewards;
-        accRewardsPerShare += (amount * 1e18) / totalStaked;
-        accRewards += amount;
 
-        emit Distribute(amount, accRewardsPerShare);
+        uint256 balance = ERC20(rewardToken).balanceOf(address(this));
+        uint256 rewardAmount = balance + _totalClaimedRewards() - _totalAccRewards() - fees;
+
+        uint256 yTokenStaked = ERC20(yToken).balanceOf(address(this));
+        uint256 yTokenSupply = ERC20(yToken).totalSupply();
+
+        uint256 amountToBondStakers = yTokenSupply != 0
+            ? (rewardAmount * yTokenStaked) / yTokenSupply
+            : 0;
+        uint256 amountToOthers = rewardAmount - amountToBondStakers;
+
+        // Distribute pro-rata share of rewards to yToken stakers
+        if (amountToBondStakers != 0) {
+            PoolInfo storage yTokenPool = poolInfo[yToken];
+            yTokenPool.accRewardsPerShare += (amountToBondStakers * 1e18) / yTokenStaked;
+            yTokenPool.accRewards += amountToBondStakers;
+
+            emit Distribute(yToken, amountToBondStakers);
+        }
+
+        // If `lpToken` is not set or 0 staked LP tokens, all excess rewards go to the protocol
+        // Otherwise, all excess rewards go to LP token stakers
+        if (amountToOthers != 0) {
+            if (lpToken == address(0) || ERC20(lpToken).balanceOf(address(this)) == 0) {
+                fees += amountToOthers;
+
+                emit Distribute(factory, amountToOthers);
+            } else {
+                uint256 totalLpStaked = ERC20(lpToken).balanceOf(address(this));
+                PoolInfo storage lpTokenPool = poolInfo[lpToken];
+                lpTokenPool.accRewardsPerShare += (amountToOthers * 1e18) / totalLpStaked;
+                lpTokenPool.accRewards += amountToOthers;
+
+                emit Distribute(lpToken, amountToOthers);
+            }
+        }
+    }
+
+    function collectFees() external override {
+        require(msg.sender == factory, "!factory");
+
+        if (fees == 0) return;
+
+        (address feeTo, ) = IPerpetualBondFactory(factory).feeInfo();
+        ERC20(rewardToken).safeTransfer(feeTo, fees);
+        delete fees;
     }
 }

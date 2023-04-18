@@ -49,7 +49,7 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
         );
 
         staking = address(
-            new PerpetualBondStaking{salt: keccak256(abi.encode(token))}(yToken, token)
+            new PerpetualBondStaking{salt: keccak256(abi.encode(token))}(factory, yToken, token)
         );
     }
 
@@ -58,7 +58,6 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
      * @return amount Amount of pending rewards
      */
     function pendingRewards() public view override returns (uint256 amount) {
-        if (totalDeposits == 0) return 0;
         uint256 balance = ERC20(token).balanceOf(address(this));
         if (totalDeposits >= balance) return 0;
 
@@ -110,6 +109,7 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
     function harvest() external override nonReentrant {
         uint256 amount = pendingRewards();
         if (amount == 0) return;
+
         ERC20(token).safeTransfer(staking, amount);
         PerpetualBondStaking(staking).distribute();
 

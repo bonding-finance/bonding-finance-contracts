@@ -18,6 +18,10 @@ contract PerpetualBondToken is IPerpetualBondToken, PerpetualBondTokenImpl {
         decimals = _decimals;
     }
 
+    //////////////////////////
+    /* Restricted Functions */
+    //////////////////////////
+
     function mint(address user, uint256 amount) external override {
         _onlyVault();
         _mint(user, amount);
