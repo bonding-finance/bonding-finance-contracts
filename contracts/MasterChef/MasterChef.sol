@@ -58,7 +58,7 @@ contract MasterChef is IMasterChef, Owned, ReentrancyGuard {
         updatePool(_pid);
         if (user.amount > 0) {
             uint256 pending = ((user.amount * pool.accRewardsPerShare) / 1e18) - user.rewardDebt;
-            ERC20(esBND).safeTransfer(msg.sender, pending);
+            EscrowedBondingToken(esBND).mint(msg.sender, pending);
         }
         ERC20(pool.token).safeTransferFrom(msg.sender, address(this), _amount);
         user.amount += _amount;
@@ -72,7 +72,7 @@ contract MasterChef is IMasterChef, Owned, ReentrancyGuard {
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
         uint256 pending = ((user.amount * pool.accRewardsPerShare) / 1e18) - user.rewardDebt;
-        ERC20(esBND).safeTransfer(msg.sender, pending);
+        EscrowedBondingToken(esBND).mint(msg.sender, pending);
 
         user.amount -= (_amount);
         user.rewardDebt = (user.amount * (pool.accRewardsPerShare)) / 1e18;
@@ -108,7 +108,6 @@ contract MasterChef is IMasterChef, Owned, ReentrancyGuard {
             return;
         }
         uint256 reward = (rewardPerBlock * pool.allocPoint) / totalAllocPoint;
-        EscrowedBondingToken(esBND).mint(address(this), reward);
         pool.accRewardsPerShare += (reward * 1e18) / stakedSupply;
         pool.lastRewardBlock = block.number;
     }
