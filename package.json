@@ -1,12 +1,17 @@
 {
     "name": "bonding-finance-contracts",
     "description": "Bonding Finance smart contracts",
+    "author": {
+        "name": "bonding-finance-dev",
+        "url": "https://github.com/bonding-finance-dev"
+    },
     "license": "BUSL-1.1",
     "version": "1.0.0",
     "homepage": "https://bonding.finance",
     "keywords": [
         "bonding-finance",
-        "contracts"
+        "contracts",
+        "core"
     ],
     "repository": {
         "type": "git",
@@ -33,6 +38,6 @@
         "compile": "npx hardhat compile",
         "test": "npx hardhat test",
         "coverage": "npx hardhat coverage",
-        "prettier": "prettier --write 'contracts/**/*.sol'"
+        "prettier": "prettier --write **.sol"
     }
 }
