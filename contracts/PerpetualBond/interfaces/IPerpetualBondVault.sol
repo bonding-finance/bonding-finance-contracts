@@ -9,6 +9,7 @@ interface IPerpetualBondVault {
     event Mint(address indexed user, uint256 amount);
     event Redeem(address indexed user, uint256 amount);
     event Harvest(uint256 amount);
+    event CollectFees(address indexed feeTo, uint256 amount);
 
     function factory() external view returns (address);
 

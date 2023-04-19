@@ -217,6 +217,12 @@ describe("Perpetual bond vault", function () {
                 await stETH.mint(vault.address, numToBN(1));
                 await expect(factory.collectFees(vault.address)).to.be.revertedWith("feeTo is 0");
             });
+
+            it("Should return early if fees is 0", async function () {
+                const { feeTo, factory, vault } = await createBond();
+                await factory.setFeeTo(feeTo.address);
+                await expect(factory.collectFees(vault.address)).to.not.emit(vault, "CollectFees");
+            });
         });
 
         describe("Success", function () {
@@ -228,6 +234,18 @@ describe("Perpetual bond vault", function () {
                 await factory.collectFees(vault.address);
                 expect(await stETH.balanceOf(feeTo.address)).to.equal(numToBN(0.1));
                 expect(await vault.fees()).to.equal(0);
+            });
+        });
+
+        describe("Events", function () {
+            it("Should emit CollectFees", async function () {
+                const { feeTo, factory, stETH, vault } = await createBond();
+                await factory.setFeeTo(feeTo.address);
+                await factory.setFee(100);
+                await vault.mint(numToBN(10));
+                await expect(factory.collectFees(vault.address))
+                    .to.emit(vault, "CollectFees")
+                    .withArgs(feeTo.address, numToBN(0.1));
             });
         });
     });

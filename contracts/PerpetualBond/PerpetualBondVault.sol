@@ -163,6 +163,9 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
         if (fees == 0) return;
 
         ERC20(token).safeTransfer(feeTo, fees);
+
+        emit CollectFees(feeTo, fees);
+
         delete fees;
     }
 }
