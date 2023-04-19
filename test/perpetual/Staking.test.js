@@ -170,12 +170,12 @@ describe("Perpetual bond staking", function () {
         });
 
         describe("Events", function () {
-            it("Should emit Unstake", async function () {
+            it("Should emit EmergencyWithdraw", async function () {
                 const { owner, vault, yToken, staking } = await createBond();
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(10));
                 await expect(staking.emergencyWithdraw(yToken.address))
-                    .to.emit(staking, "Unstake")
+                    .to.emit(staking, "EmergencyWithdraw")
                     .withArgs(owner.address, yToken.address, numToBN(10));
             });
         });

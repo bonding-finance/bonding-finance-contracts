@@ -8,6 +8,7 @@ pragma solidity ^0.8.0;
 interface IPerpetualBondStaking {
     event Stake(address indexed user, address indexed token, uint256 amount);
     event Unstake(address indexed user, address indexed token, uint256 amount);
+    event EmergencyWithdraw(address indexed user, address indexed token, uint256 amount);
     event Claim(address indexed user, address indexed token, uint256 amount);
     event Distribute(address indexed pool, uint256 amount);
 
@@ -46,13 +47,13 @@ interface IPerpetualBondStaking {
         view
         returns (uint256 accRewardsPerShare, uint256 accRewards, uint256 claimedRewards);
 
-    function pendingRewards(address token, address user) external view returns (uint256 amount);
-
     function stake(address token, uint256 amount) external;
 
     function unstake(address token, uint256 amount) external;
 
     function emergencyWithdraw(address token) external;
+
+    function pendingRewards(address token, address user) external view returns (uint256 rewards);
 
     //////////////////////////
     /* Restricted Functions */

@@ -35,7 +35,7 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
 
         dToken = address(
             new PerpetualBondToken{salt: keccak256(abi.encode(token))}(
-                string(abi.encodePacked(tokenSymbol, " Deposit")),
+                string(abi.encodePacked(tokenSymbol, " Deposit Token")),
                 string(abi.encodePacked(tokenSymbol, "-D")),
                 decimals
             )
@@ -43,7 +43,7 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
 
         yToken = address(
             new PerpetualBondToken{salt: keccak256(abi.encode(token))}(
-                string(abi.encodePacked(tokenSymbol, " Yield")),
+                string(abi.encodePacked(tokenSymbol, " Yield Token")),
                 string(abi.encodePacked(tokenSymbol, "-Y")),
                 decimals
             )
@@ -51,18 +51,7 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
     }
 
     /**
-     * @notice Calculates rebase yield that hasn't been distributed to staking contract
-     * @return amount Amount of pending rewards
-     */
-    function pendingRewards() public view override returns (uint256 amount) {
-        uint256 balance = ERC20(token).balanceOf(address(this));
-        if (totalDeposits + fees >= balance) return 0;
-
-        amount = balance - totalDeposits - fees;
-    }
-
-    /**
-     * @notice Deposit `amount` underlying tokens to mint dTokens and yTokens
+     * @notice Deposit `amount` underlying tokens to mint `amount` dTokens and `amount` yTokens
      * @param amount Amount of underlying tokens to deposit
      * @return mintAmount Amount of dTokens and yTokens minted
      */
@@ -124,13 +113,22 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
     }
 
     /**
+     * @notice Calculates rebase yield that hasn't been distributed to staking contract
+     * @return rewards Amount of pending rewards
+     */
+    function pendingRewards() public view override returns (uint256 rewards) {
+        uint256 balance = ERC20(token).balanceOf(address(this));
+        if (totalDeposits + fees >= balance) return 0;
+
+        rewards = balance - totalDeposits - fees;
+    }
+
+    /**
      * @notice Applies fee (if any) to `amount`
      * @param amount The original amount
      * @return feeAmount The fee amount charged
      */
     function _chargeFee(uint256 amount) internal returns (uint256 feeAmount) {
-        if (amount == 0) return 0;
-
         (, uint256 fee) = IPerpetualBondFactory(factory).feeInfo();
         if (fee == 0) return 0;
 
@@ -149,7 +147,7 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
      * @dev Can be changed to swap rewards receiver
      * @param _staking Staking contract address
      */
-    function setStaking(address _staking) external {
+    function setStaking(address _staking) external override {
         require(msg.sender == factory, "!factory");
 
         staking = _staking;

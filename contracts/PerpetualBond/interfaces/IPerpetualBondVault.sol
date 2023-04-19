@@ -24,13 +24,13 @@ interface IPerpetualBondVault {
 
     function fees() external view returns (uint256);
 
-    function pendingRewards() external view returns (uint256);
-
     function mint(uint256 amount) external returns (uint256 mintAmount);
 
     function redeem(uint256 amount) external returns (uint256 redeemAmount);
 
     function harvest() external;
+
+    function pendingRewards() external view returns (uint256);
 
     //////////////////////////
     /* Restricted Functions */

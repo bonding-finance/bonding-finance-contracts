@@ -93,9 +93,9 @@ describe("Perpetual bond factory", function () {
                 const BondToken = await ethers.getContractFactory("PerpetualBondToken");
                 const dToken = BondToken.attach(await vault.dToken());
                 const yToken = BondToken.attach(await vault.yToken());
-                expect(await dToken.name()).to.equal(`${await stETH.symbol()} Deposit`);
+                expect(await dToken.name()).to.equal(`${await stETH.symbol()} Deposit Token`);
                 expect(await dToken.symbol()).to.equal(`${await stETH.symbol()}-D`);
-                expect(await yToken.name()).to.equal(`${await stETH.symbol()} Yield`);
+                expect(await yToken.name()).to.equal(`${await stETH.symbol()} Yield Token`);
                 expect(await yToken.symbol()).to.equal(`${await stETH.symbol()}-Y`);
             });
         });
