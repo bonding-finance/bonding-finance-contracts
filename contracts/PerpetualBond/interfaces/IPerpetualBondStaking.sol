@@ -11,6 +11,7 @@ interface IPerpetualBondStaking {
     event EmergencyWithdraw(address indexed user, address indexed token, uint256 amount);
     event Claim(address indexed user, address indexed token, uint256 amount);
     event Distribute(address indexed pool, uint256 amount);
+    event CollectSurplus(address indexed feeTo, uint256 amount);
 
     struct PoolInfo {
         uint256 accRewardsPerShare;

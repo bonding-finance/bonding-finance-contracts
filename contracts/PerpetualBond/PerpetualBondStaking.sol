@@ -219,6 +219,9 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
         if (surplus == 0) return;
 
         ERC20(rewardToken).safeTransfer(feeTo, surplus);
+
+        emit CollectSurplus(feeTo, surplus);
+
         delete surplus;
     }
 }

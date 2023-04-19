@@ -350,6 +350,15 @@ describe("Perpetual bond staking", function () {
                     "feeTo is 0"
                 );
             });
+
+            it("Should return early if surplus is 0", async function () {
+                const { factory, staking, feeTo } = await createBond();
+                await factory.setFeeTo(feeTo.address);
+                await expect(factory.collectSurplus(staking.address)).to.not.emit(
+                    staking,
+                    "CollectSurplus"
+                );
+            });
         });
 
         describe("Success", function () {
@@ -364,6 +373,21 @@ describe("Perpetual bond staking", function () {
                 await factory.collectSurplus(staking.address);
                 expect(await stETH.balanceOf(feeTo.address)).to.equal(numToBN(0.2));
                 expect(await staking.surplus()).to.equal(0);
+            });
+        });
+
+        describe("Events", function () {
+            it("Should emit CollectSurplus", async function () {
+                const { feeTo, factory, stETH, vault, yToken, staking } = await createBond();
+                await factory.setStaking(vault.address, staking.address);
+                await vault.mint(numToBN(10));
+                await staking.stake(yToken.address, numToBN(8));
+                await stETH.mint(vault.address, numToBN(1));
+                await vault.harvest();
+                await factory.setFeeTo(feeTo.address);
+                await expect(factory.collectSurplus(staking.address))
+                    .to.emit(staking, "CollectSurplus")
+                    .withArgs(feeTo.address, numToBN(0.2));
             });
         });
     });
