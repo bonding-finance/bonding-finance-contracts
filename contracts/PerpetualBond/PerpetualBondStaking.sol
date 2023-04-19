@@ -205,13 +205,13 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
 
     /**
      * @notice Collects earmarked fees (surplus yield)
+     * @param feeTo Address to send fees to
      */
-    function collectFees() external override {
+    function collectFees(address feeTo) external override {
         require(msg.sender == factory, "!factory");
 
         if (fees == 0) return;
 
-        (address feeTo, ) = IPerpetualBondFactory(factory).feeInfo();
         ERC20(rewardToken).safeTransfer(feeTo, fees);
         delete fees;
     }

@@ -60,5 +60,5 @@ interface IPerpetualBondStaking {
 
     function distribute() external;
 
-    function collectFees() external;
+    function collectFees(address feeTo) external;
 }

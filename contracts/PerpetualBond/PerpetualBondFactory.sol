@@ -50,7 +50,7 @@ contract PerpetualBondFactory is IPerpetualBondFactory, PerpetualBondDeployer, O
         require(staking != address(0));
         require(feeInfo.feeTo != address(0), "feeTo is 0");
 
-        IPerpetualBondStaking(staking).collectFees();
+        IPerpetualBondStaking(staking).collectFees(feeInfo.feeTo);
     }
 
     function setFeeTo(address feeTo) external override onlyOwner {
