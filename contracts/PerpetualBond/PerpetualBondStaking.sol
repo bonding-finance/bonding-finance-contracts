@@ -20,17 +20,17 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
     address public immutable override yToken;
     address public immutable override lpToken;
     address public immutable override rewardToken;
-    uint256 public override fees;
+    uint256 public override surplus;
 
     mapping(address => mapping(address => UserInfo)) public override userInfo;
     mapping(address => PoolInfo) public override poolInfo;
 
     constructor(address _vault, address _lpToken) {
         require(_vault != address(0));
-        require(_lpToken != address(0));
         factory = IPerpetualBondVault(_vault).factory();
         vault = _vault;
         yToken = IPerpetualBondVault(_vault).yToken();
+        // Note: If _lpToken is 0, the protocol will earn all surplus yield
         lpToken = _lpToken;
         rewardToken = IPerpetualBondVault(_vault).token();
     }
@@ -166,7 +166,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
         require(msg.sender == vault, "!vault");
 
         uint256 balance = ERC20(rewardToken).balanceOf(address(this));
-        uint256 rewardAmount = balance + _totalClaimedRewards() - _totalAccRewards() - fees;
+        uint256 rewardAmount = balance + _totalClaimedRewards() - _totalAccRewards() - surplus;
 
         uint256 yTokenStaked = ERC20(yToken).balanceOf(address(this));
         uint256 yTokenSupply = ERC20(yToken).totalSupply();
@@ -189,7 +189,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
         // Otherwise, all excess rewards go to LP token stakers
         if (amountToOthers != 0) {
             if (lpToken == address(0) || ERC20(lpToken).balanceOf(address(this)) == 0) {
-                fees += amountToOthers;
+                surplus += amountToOthers;
 
                 emit Distribute(factory, amountToOthers);
             } else {
@@ -204,15 +204,15 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
     }
 
     /**
-     * @notice Collects earmarked fees (surplus yield)
-     * @param feeTo Address to send fees to
+     * @notice Collects surplus yield
+     * @param feeTo Address to send surplus to
      */
-    function collectFees(address feeTo) external override {
+    function collectSurplus(address feeTo) external override {
         require(msg.sender == factory, "!factory");
 
-        if (fees == 0) return;
+        if (surplus == 0) return;
 
-        ERC20(rewardToken).safeTransfer(feeTo, fees);
-        delete fees;
+        ERC20(rewardToken).safeTransfer(feeTo, surplus);
+        delete surplus;
     }
 }
