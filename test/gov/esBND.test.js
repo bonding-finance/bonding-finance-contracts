@@ -10,7 +10,7 @@ describe("esBND", function () {
         const EsBND = await ethers.getContractFactory("EscrowedBondingToken");
         const esBND = await EsBND.deploy(vestingDuration);
         const BND = await ethers.getContractFactory("BondingToken");
-        const bnd = BND.attach(await esBND.bondingToken());
+        const bnd = BND.attach(await esBND.bnd());
         await esBND.approve(esBND.address, constants.MaxUint256);
 
         return { esBND, bnd, vestingDuration, owner, other };
@@ -20,12 +20,12 @@ describe("esBND", function () {
         it("Should have correct initial values", async function () {
             const { esBND, vestingDuration, owner } = await loadFixture(deployFixture);
             expect(await esBND.owner()).to.equal(owner.address);
+            expect(await esBND.bnd()).to.not.equal(constants.AddressZero);
             expect(await esBND.vestingDuration()).to.equal(vestingDuration);
-            expect(await esBND.bondingToken()).to.not.equal(constants.AddressZero);
         });
     });
 
-    describe("setMinter", function () {
+    describe("Set minter", function () {
         describe("Validations", function () {
             it("Should only allow owner", async function () {
                 const { esBND, other } = await loadFixture(deployFixture);
@@ -44,7 +44,7 @@ describe("esBND", function () {
         });
     });
 
-    describe("mint", function () {
+    describe("Mint", function () {
         describe("Validations", function () {
             it("Should only allow minter", async function () {
                 const { esBND, other } = await loadFixture(deployFixture);
@@ -65,7 +65,7 @@ describe("esBND", function () {
         });
     });
 
-    describe("vest", function () {
+    describe("Vest", function () {
         it("Should vest", async function () {
             const { esBND, owner } = await loadFixture(deployFixture);
             await esBND.setMinter(owner.address, true);
@@ -79,7 +79,7 @@ describe("esBND", function () {
         });
     });
 
-    describe("claimable", function () {
+    describe("Claimable", function () {
         it("Should be correct claimable amount", async function () {
             const { esBND, owner } = await loadFixture(deployFixture);
             await esBND.setMinter(owner.address, true);
@@ -100,7 +100,7 @@ describe("esBND", function () {
         });
     });
 
-    describe("claim", function () {
+    describe("Claim", function () {
         it("Should claim correct amount", async function () {
             const { esBND, bnd, owner } = await loadFixture(deployFixture);
             await esBND.setMinter(owner.address, true);

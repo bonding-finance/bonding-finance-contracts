@@ -15,7 +15,7 @@ interface IEscrowedBondingToken {
         uint256 lastVestingTime;
     }
 
-    function bondingToken() external view returns (address);
+    function bnd() external view returns (address);
 
     function vestingDuration() external view returns (uint256);
 

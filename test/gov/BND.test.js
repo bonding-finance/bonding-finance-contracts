@@ -10,7 +10,7 @@ describe("BND", function () {
         const EsBND = await ethers.getContractFactory("EscrowedBondingToken");
         const esBND = await EsBND.deploy(vestingDuration);
         const BND = await ethers.getContractFactory("BondingToken");
-        const bnd = BND.attach(await esBND.bondingToken());
+        const bnd = BND.attach(await esBND.bnd());
         await esBND.approve(esBND.address, constants.MaxUint256);
 
         return { esBND, bnd, vestingDuration, owner, other };
@@ -18,7 +18,7 @@ describe("BND", function () {
 
     describe("Deployment", function () {
         it("Should have correct initial values", async function () {
-            const { esBND, bnd, vestingDuration, owner } = await loadFixture(deployFixture);
+            const { esBND, bnd} = await loadFixture(deployFixture);
             expect(await bnd.esBND()).to.equal(esBND.address);
         });
     });

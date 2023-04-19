@@ -15,17 +15,16 @@ import "../utils/Owned.sol";
 contract EscrowedBondingToken is IEscrowedBondingToken, ERC20, Owned {
     using SafeERC20 for ERC20;
 
-    address public immutable override bondingToken;
+    address public immutable override bnd;
     uint256 public immutable override vestingDuration;
 
     mapping(address => VestingDetails) public override vestingInfo;
-
     mapping(address => bool) public override minters;
 
     constructor(uint256 _vestingDuration) ERC20("Escrowed Bonding Finance Token", "esBND", 18) {
         vestingDuration = _vestingDuration;
 
-        bondingToken = address(new BondingToken{salt: keccak256(abi.encode("BND"))}());
+        bnd = address(new BondingToken{salt: keccak256(abi.encode("BND"))}());
     }
 
     /**
@@ -73,7 +72,7 @@ contract EscrowedBondingToken is IEscrowedBondingToken, ERC20, Owned {
         amount = claimable(user);
         vestingInfo[user].claimedAmount += amount;
         _burn(address(this), amount);
-        BondingToken(bondingToken).mint(user, amount);
+        BondingToken(bnd).mint(user, amount);
 
         emit Claim(user, amount);
     }
