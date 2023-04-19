@@ -37,15 +37,15 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
 
     /**
      * @notice Calculates `_user` pending rewards
-     * @param _user Address of the user
      * @param _token Address of the staked token
+     * @param _user Address of the user
      * @return rewards Amount of pending rewards for `_user`
      */
     function pendingRewards(
-        address _user,
-        address _token
+        address _token,
+        address _user
     ) public view override returns (uint256 rewards) {
-        UserInfo memory user = userInfo[_user][_token];
+        UserInfo memory user = userInfo[_token][_user];
         rewards = ((user.amount * poolInfo[_token].accRewardsPerShare) / 1e18) - user.rewardDebt;
     }
 
@@ -58,9 +58,9 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
     function stake(address token, uint256 amount) external override nonReentrant {
         _validateToken(token);
         _harvestRewards();
-        _claimRewards(msg.sender, token);
+        _claimRewards(token, msg.sender);
 
-        UserInfo storage user = userInfo[msg.sender][token];
+        UserInfo storage user = userInfo[token][msg.sender];
         if (amount != 0) {
             ERC20(token).safeTransferFrom(msg.sender, address(this), amount);
             user.amount += amount;
@@ -80,9 +80,9 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
     function unstake(address token, uint256 amount) external override nonReentrant {
         _validateToken(token);
         _harvestRewards();
-        _claimRewards(msg.sender, token);
+        _claimRewards(token, msg.sender);
 
-        UserInfo storage user = userInfo[msg.sender][token];
+        UserInfo storage user = userInfo[token][msg.sender];
         user.amount -= amount;
         user.rewardDebt = (user.amount * poolInfo[token].accRewardsPerShare) / 1e18;
         ERC20(token).safeTransfer(msg.sender, amount);
@@ -96,7 +96,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
      * @param token Token to withdraw
      */
     function emergencyWithdraw(address token) external override nonReentrant {
-        UserInfo storage user = userInfo[msg.sender][token];
+        UserInfo storage user = userInfo[token][msg.sender];
         uint256 amount = user.amount;
         ERC20(token).safeTransfer(msg.sender, amount);
 
@@ -139,11 +139,11 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
 
     /**
      * @notice Claims all pending rewards for `user`
-     * @param user User to claim rewards for
      * @param token Token to claim rewards for
+     * @param user User to claim rewards for
      */
-    function _claimRewards(address user, address token) internal {
-        if (userInfo[user][token].amount == 0) return;
+    function _claimRewards(address token, address user) internal {
+        if (userInfo[token][user].amount == 0) return;
 
         uint256 rewards = pendingRewards(user, token);
         if (rewards == 0) return;

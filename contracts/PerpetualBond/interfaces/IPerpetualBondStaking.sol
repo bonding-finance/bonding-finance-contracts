@@ -35,8 +35,8 @@ interface IPerpetualBondStaking {
     function surplus() external view returns (uint256);
 
     function userInfo(
-        address user,
-        address token
+        address token,
+        address user
     ) external view returns (uint256 amount, uint256 rewardDebt);
 
     function poolInfo(
@@ -46,7 +46,7 @@ interface IPerpetualBondStaking {
         view
         returns (uint256 accRewardsPerShare, uint256 accRewards, uint256 claimedRewards);
 
-    function pendingRewards(address user, address token) external view returns (uint256 amount);
+    function pendingRewards(address token, address user) external view returns (uint256 amount);
 
     function stake(address token, uint256 amount) external;
 

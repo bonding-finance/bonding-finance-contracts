@@ -85,7 +85,7 @@ describe("Perpetual bond staking", function () {
                 const { owner, vault, yToken, staking } = await createBond();
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(10));
-                const userInfo = await staking.userInfo(owner.address, yToken.address);
+                const userInfo = await staking.userInfo(yToken.address, owner.address);
                 expect(await yToken.balanceOf(owner.address)).to.equal(0);
                 expect(userInfo.amount).to.equal(numToBN(10));
                 expect(userInfo.rewardDebt).to.equal(0);
@@ -95,7 +95,7 @@ describe("Perpetual bond staking", function () {
                 const { owner, factory, lpToken, vault, staking } = await createBond();
                 await factory.setStaking(vault.address, staking.address);
                 await staking.stake(lpToken.address, numToBN(10));
-                const userInfo = await staking.userInfo(owner.address, lpToken.address);
+                const userInfo = await staking.userInfo(lpToken.address, owner.address);
                 expect(await lpToken.balanceOf(owner.address)).to.equal(numToBN(90));
                 expect(userInfo.amount).to.equal(numToBN(10));
                 expect(userInfo.rewardDebt).to.equal(0);
@@ -136,7 +136,7 @@ describe("Perpetual bond staking", function () {
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(10));
                 await staking.unstake(yToken.address, numToBN(10));
-                const userInfo = await staking.userInfo(owner.address, yToken.address);
+                const userInfo = await staking.userInfo(yToken.address, owner.address);
                 expect(await yToken.balanceOf(owner.address)).to.equal(numToBN(10));
                 expect(userInfo.amount).to.equal(numToBN(0));
                 expect(userInfo.rewardDebt).to.equal(0);
@@ -162,7 +162,7 @@ describe("Perpetual bond staking", function () {
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(10));
                 await staking.emergencyWithdraw(yToken.address);
-                const userInfo = await staking.userInfo(owner.address, yToken.address);
+                const userInfo = await staking.userInfo(yToken.address, owner.address);
                 expect(await yToken.balanceOf(owner.address)).to.equal(numToBN(10));
                 expect(userInfo.amount).to.equal(numToBN(0));
                 expect(userInfo.rewardDebt).to.equal(0);
@@ -187,12 +187,12 @@ describe("Perpetual bond staking", function () {
                 const { owner, vault, yToken, staking } = await createBond();
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(10));
-                expect(await staking.pendingRewards(owner.address, yToken.address)).to.equal(0);
+                expect(await staking.pendingRewards(yToken.address, owner.address)).to.equal(0);
             });
 
             it("Should be 0 when token is invalid", async function () {
                 const { owner, staking } = await createBond();
-                expect(await staking.pendingRewards(owner.address, constants.AddressZero)).to.equal(
+                expect(await staking.pendingRewards(constants.AddressZero, owner.address)).to.equal(
                     0
                 );
             });
@@ -206,7 +206,7 @@ describe("Perpetual bond staking", function () {
                 await staking.stake(yToken.address, numToBN(10));
                 await stETH.mint(vault.address, numToBN(1));
                 await vault.harvest();
-                expect(await staking.pendingRewards(owner.address, yToken.address)).to.equal(
+                expect(await staking.pendingRewards(yToken.address, owner.address)).to.equal(
                     numToBN(1)
                 );
             });
@@ -219,7 +219,7 @@ describe("Perpetual bond staking", function () {
                 await staking.stake(yToken.address, numToBN(5));
                 await stETH.mint(vault.address, numToBN(1));
                 await vault.harvest();
-                expect(await staking.pendingRewards(owner.address, yToken.address)).to.equal(
+                expect(await staking.pendingRewards(yToken.address, owner.address)).to.equal(
                     numToBN(0.5)
                 );
                 expect(await staking.surplus()).to.equal(numToBN(0.5));
@@ -234,10 +234,10 @@ describe("Perpetual bond staking", function () {
                 await staking.stake(lpToken.address, numToBN(5));
                 await stETH.mint(vault.address, numToBN(1));
                 await vault.harvest();
-                expect(await staking.pendingRewards(owner.address, yToken.address)).to.equal(
+                expect(await staking.pendingRewards(yToken.address, owner.address)).to.equal(
                     numToBN(0.5)
                 );
-                expect(await staking.pendingRewards(owner.address, lpToken.address)).to.equal(
+                expect(await staking.pendingRewards(lpToken.address, owner.address)).to.equal(
                     numToBN(0.5)
                 );
             });
@@ -261,7 +261,7 @@ describe("Perpetual bond staking", function () {
                 await staking.stake(yToken.address, numToBN(10));
                 await stETH.mint(vault.address, numToBN(1));
                 await vault.harvest();
-                expect(await staking.pendingRewards(owner.address, yToken.address)).to.equal(
+                expect(await staking.pendingRewards(yToken.address, owner.address)).to.equal(
                     numToBN(1)
                 );
                 expect(await staking.pendingRewards(owner.address, lpToken.address)).to.equal(0);
@@ -276,7 +276,7 @@ describe("Perpetual bond staking", function () {
                 await staking.stake(yToken.address, numToBN(8));
                 await stETH.mint(vault.address, numToBN(1));
                 await vault.harvest();
-                expect(await staking.pendingRewards(owner.address, yToken.address)).to.equal(
+                expect(await staking.pendingRewards(yToken.address, owner.address)).to.equal(
                     numToBN(0.8)
                 );
                 expect(await staking.pendingRewards(owner.address, lpToken.address)).to.equal(0);
@@ -293,10 +293,10 @@ describe("Perpetual bond staking", function () {
 
                 await stETH.mint(vault.address, numToBN(1));
                 await vault.harvest();
-                expect(await staking.pendingRewards(owner.address, yToken.address)).to.equal(
+                expect(await staking.pendingRewards(yToken.address, owner.address)).to.equal(
                     numToBN(0.8)
                 );
-                expect(await staking.pendingRewards(owner.address, lpToken.address)).to.equal(
+                expect(await staking.pendingRewards(lpToken.address, owner.address)).to.equal(
                     numToBN(0.2)
                 );
                 expect(await staking.surplus()).to.equal(0);
