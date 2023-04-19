@@ -17,9 +17,9 @@ contract PerpetualBondDeployer is IPerpetualBondDeployer {
      * @param factory Factory address
      * @param token Underlying token of the bond
      */
-    function deploy(address factory, address token) internal returns (address bond) {
+    function deploy(address factory, address token) internal returns (address vault) {
         parameters = Parameters({factory: factory, token: token});
-        bond = address(new PerpetualBondVault{salt: keccak256(abi.encode(token))}());
+        vault = address(new PerpetualBondVault{salt: keccak256(abi.encode(token))}());
         delete parameters;
     }
 }

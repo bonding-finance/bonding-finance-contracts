@@ -61,30 +61,30 @@ describe("Perpetual bond factory", function () {
             it("Should revert if !owner", async function () {
                 const { factory, other } = await loadFixture(deployFixture);
                 await expect(
-                    factory.connect(other).createBond(constants.AddressZero)
+                    factory.connect(other).createVault(constants.AddressZero)
                 ).to.be.revertedWith("UNAUTHORIZED");
             });
 
             it("Should revert if token address is 0", async function () {
                 const { factory } = await loadFixture(deployFixture);
-                await expect(factory.createBond(constants.AddressZero)).to.be.reverted;
+                await expect(factory.createVault(constants.AddressZero)).to.be.reverted;
             });
             it("Should revert if perpetual bond exists", async function () {
                 const { factory, stETH } = await loadFixture(deployFixture);
-                await factory.createBond(stETH.address);
-                await expect(factory.createBond(stETH.address)).to.be.revertedWith("Bond exists");
+                await factory.createVault(stETH.address);
+                await expect(factory.createVault(stETH.address)).to.be.revertedWith("Bond exists");
             });
         });
 
         describe("Success", function () {
             it("Should create perpetual bond", async function () {
                 const { factory, stETH } = await loadFixture(deployFixture);
-                await factory.createBond(stETH.address);
-                const vaultAddress = await factory.getBond(stETH.address);
+                await factory.createVault(stETH.address);
+                const vaultAddress = await factory.getVault(stETH.address);
                 const Vault = await ethers.getContractFactory("PerpetualBondVault");
                 const vault = Vault.attach(vaultAddress);
-                expect(await factory.allBondsLength()).to.equal(1);
-                expect(await factory.getBond(stETH.address)).to.equal(vault.address);
+                expect(await factory.allVaultsLength()).to.equal(1);
+                expect(await factory.getVault(stETH.address)).to.equal(vault.address);
                 expect(await vault.factory()).to.equal(factory.address);
                 expect(await vault.token()).to.equal(stETH.address);
                 expect(await vault.dToken()).to.not.equal(constants.AddressZero);
@@ -101,11 +101,11 @@ describe("Perpetual bond factory", function () {
         });
 
         describe("Events", function () {
-            it("Should emit BondCreated", async function () {
+            it("Should emit VaultCreated", async function () {
                 const { factory, stETH } = await loadFixture(deployFixture);
-                await expect(factory.createBond(stETH.address))
-                    .to.emit(factory, "BondCreated")
-                    .withArgs(stETH.address, await factory.getBond(stETH.address));
+                await expect(factory.createVault(stETH.address))
+                    .to.emit(factory, "VaultCreated")
+                    .withArgs(stETH.address, await factory.getVault(stETH.address));
             });
         });
     });

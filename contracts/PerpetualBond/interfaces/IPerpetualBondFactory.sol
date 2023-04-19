@@ -6,7 +6,7 @@ pragma solidity ^0.8.0;
  * @author Bonding Finance
  */
 interface IPerpetualBondFactory {
-    event BondCreated(address indexed token, address bond);
+    event VaultCreated(address indexed token, address vault);
 
     struct FeeInfo {
         address feeTo;
@@ -15,21 +15,21 @@ interface IPerpetualBondFactory {
 
     function feeInfo() external view returns (address feeTo, uint256 fee);
 
-    function allBonds(uint256) external view returns (address);
+    function allVaults(uint256) external view returns (address);
 
-    function getBond(address token) external view returns (address);
+    function getVault(address token) external view returns (address);
 
-    function allBondsLength() external view returns (uint256);
+    function allVaultsLength() external view returns (uint256);
 
     //////////////////////////
     /* Restricted Functions */
     //////////////////////////
 
-    function createBond(address token) external returns (address bond);
+    function createVault(address token) external returns (address vault);
 
-    function setStaking(address bond, address staking) external;
+    function setStaking(address vault, address staking) external;
 
-    function collectFees(address bond) external;
+    function collectFees(address vault) external;
 
     function collectSurplus(address staking) external;
 

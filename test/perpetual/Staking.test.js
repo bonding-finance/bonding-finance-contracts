@@ -17,10 +17,10 @@ describe("Perpetual bond staking", function () {
         return { factory, stETH, lpToken, accounts };
     }
 
-    async function createBond() {
+    async function createVault() {
         const { factory, stETH, lpToken, accounts } = await loadFixture(deployFixture);
-        await factory.createBond(stETH.address);
-        const vaultAddress = await factory.getBond(stETH.address);
+        await factory.createVault(stETH.address);
+        const vaultAddress = await factory.getVault(stETH.address);
         const Vault = await ethers.getContractFactory("PerpetualBondVault");
         const vault = Vault.attach(vaultAddress);
         const BondToken = await ethers.getContractFactory("PerpetualBondToken");
@@ -54,7 +54,7 @@ describe("Perpetual bond staking", function () {
 
     describe("Deployment", function () {
         it("Should have correct initial values", async function () {
-            const { factory, vault, staking, lpToken } = await createBond();
+            const { factory, vault, staking, lpToken } = await createVault();
             expect(await staking.factory()).to.equal(factory.address);
             expect(await staking.vault()).to.equal(vault.address);
             expect(await staking.yToken()).to.equal(await vault.yToken());
@@ -67,14 +67,14 @@ describe("Perpetual bond staking", function () {
     describe("Stake", function () {
         describe("Validations", function () {
             it("Should revert if token !valid", async function () {
-                const { staking } = await createBond();
+                const { staking } = await createVault();
                 await expect(staking.stake(constants.AddressZero, numToBN(1))).to.be.revertedWith(
                     "!valid"
                 );
             });
 
             it("Should revert amount > balance", async function () {
-                const { vault, yToken, staking } = await createBond();
+                const { vault, yToken, staking } = await createVault();
                 await vault.mint(numToBN(10));
                 await expect(staking.stake(yToken.address, numToBN(11))).to.be.reverted;
             });
@@ -82,7 +82,7 @@ describe("Perpetual bond staking", function () {
 
         describe("Success", function () {
             it("Should stake yToken", async function () {
-                const { owner, vault, yToken, staking } = await createBond();
+                const { owner, vault, yToken, staking } = await createVault();
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(10));
                 const userInfo = await staking.userInfo(yToken.address, owner.address);
@@ -92,7 +92,7 @@ describe("Perpetual bond staking", function () {
             });
 
             it("Should stake LP token", async function () {
-                const { owner, factory, lpToken, vault, staking } = await createBond();
+                const { owner, factory, lpToken, vault, staking } = await createVault();
                 await factory.setStaking(vault.address, staking.address);
                 await staking.stake(lpToken.address, numToBN(10));
                 const userInfo = await staking.userInfo(lpToken.address, owner.address);
@@ -102,7 +102,7 @@ describe("Perpetual bond staking", function () {
             });
 
             it("Should stake 0", async function () {
-                const { owner, yToken, staking } = await createBond();
+                const { owner, yToken, staking } = await createVault();
                 await staking.stake(yToken.address, 0);
                 const userInfo = await staking.userInfo(yToken.address, owner.address);
                 expect(userInfo.amount).to.equal(0);
@@ -112,7 +112,7 @@ describe("Perpetual bond staking", function () {
 
         describe("Events", function () {
             it("Should emit Stake", async function () {
-                const { owner, vault, yToken, staking } = await createBond();
+                const { owner, vault, yToken, staking } = await createVault();
                 await vault.mint(numToBN(10));
                 await expect(staking.stake(yToken.address, numToBN(10)))
                     .to.emit(staking, "Stake")
@@ -124,14 +124,14 @@ describe("Perpetual bond staking", function () {
     describe("Unstake", function () {
         describe("Validations", function () {
             it("Should revert if token !valid", async function () {
-                const { staking } = await createBond();
+                const { staking } = await createVault();
                 await expect(staking.unstake(constants.AddressZero, numToBN(1))).to.be.revertedWith(
                     "!valid"
                 );
             });
 
             it("Should revert amount > deposits", async function () {
-                const { vault, yToken, staking } = await createBond();
+                const { vault, yToken, staking } = await createVault();
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(10));
                 await expect(staking.unstake(yToken.address, numToBN(11))).to.be.reverted;
@@ -140,7 +140,7 @@ describe("Perpetual bond staking", function () {
 
         describe("Success", function () {
             it("Should unstake yToken", async function () {
-                const { owner, vault, yToken, staking } = await createBond();
+                const { owner, vault, yToken, staking } = await createVault();
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(10));
                 await staking.unstake(yToken.address, numToBN(10));
@@ -153,7 +153,7 @@ describe("Perpetual bond staking", function () {
 
         describe("Events", function () {
             it("Should emit Unstake", async function () {
-                const { owner, vault, yToken, staking } = await createBond();
+                const { owner, vault, yToken, staking } = await createVault();
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(10));
                 await expect(staking.unstake(yToken.address, numToBN(10)))
@@ -166,7 +166,7 @@ describe("Perpetual bond staking", function () {
     describe("Emergency withdraw", function () {
         describe("Success", function () {
             it("Should emergency withdraw", async function () {
-                const { owner, vault, yToken, staking } = await createBond();
+                const { owner, vault, yToken, staking } = await createVault();
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(10));
                 await staking.emergencyWithdraw(yToken.address);
@@ -179,7 +179,7 @@ describe("Perpetual bond staking", function () {
 
         describe("Events", function () {
             it("Should emit EmergencyWithdraw", async function () {
-                const { owner, vault, yToken, staking } = await createBond();
+                const { owner, vault, yToken, staking } = await createVault();
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(10));
                 await expect(staking.emergencyWithdraw(yToken.address))
@@ -192,14 +192,14 @@ describe("Perpetual bond staking", function () {
     describe("Pending rewards", function () {
         describe("Validations", function () {
             it("Should be 0 when no rewards", async function () {
-                const { owner, vault, yToken, staking } = await createBond();
+                const { owner, vault, yToken, staking } = await createVault();
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(10));
                 expect(await staking.pendingRewards(yToken.address, owner.address)).to.equal(0);
             });
 
             it("Should be 0 when token is invalid", async function () {
-                const { owner, staking } = await createBond();
+                const { owner, staking } = await createVault();
                 expect(await staking.pendingRewards(constants.AddressZero, owner.address)).to.equal(
                     0
                 );
@@ -208,7 +208,7 @@ describe("Perpetual bond staking", function () {
 
         describe("Success", function () {
             it("Should get all rewards when solo staking", async function () {
-                const { factory, owner, stETH, yToken, vault, staking } = await createBond();
+                const { factory, owner, stETH, yToken, vault, staking } = await createVault();
                 await factory.setStaking(vault.address, staking.address);
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(10));
@@ -221,7 +221,7 @@ describe("Perpetual bond staking", function () {
 
             it("Should get half rewards if half total supply is staked", async function () {
                 const { factory, owner, stETH, vault, yToken, lpToken, staking } =
-                    await createBond();
+                    await createVault();
                 await factory.setStaking(vault.address, staking.address);
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(5));
@@ -235,7 +235,7 @@ describe("Perpetual bond staking", function () {
 
             it("Should give half rewards to yToken and LP stakers", async function () {
                 const { owner, factory, yToken, lpToken, stETH, vault, staking } =
-                    await createBond();
+                    await createVault();
                 await factory.setStaking(vault.address, staking.address);
                 await vault.connect(owner).mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(5));
@@ -255,7 +255,7 @@ describe("Perpetual bond staking", function () {
     describe("Distribute", function () {
         describe("Validations", function () {
             it("Should revert if msg.sender != distributor", async function () {
-                const { staking, owner } = await createBond();
+                const { staking, owner } = await createVault();
                 await expect(staking.connect(owner).distribute()).to.be.revertedWith("!vault");
             });
         });
@@ -263,7 +263,7 @@ describe("Perpetual bond staking", function () {
         describe("Success", function () {
             it("Should distribute only to bond stakers", async function () {
                 const { owner, factory, stETH, vault, yToken, lpToken, staking } =
-                    await createBond();
+                    await createVault();
                 await factory.setStaking(vault.address, staking.address);
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(10));
@@ -278,7 +278,7 @@ describe("Perpetual bond staking", function () {
 
             it("Should distribute only to bond stakers and protocol", async function () {
                 const { owner, factory, stETH, vault, yToken, lpToken, staking } =
-                    await createBond();
+                    await createVault();
                 await factory.setStaking(vault.address, staking.address);
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(8));
@@ -293,7 +293,7 @@ describe("Perpetual bond staking", function () {
 
             it("Should distribute only to bond stakers and lp stakers", async function () {
                 const { owner, factory, stETH, vault, yToken, lpToken, staking } =
-                    await createBond();
+                    await createVault();
                 await factory.setStaking(vault.address, staking.address);
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(8));
@@ -313,7 +313,7 @@ describe("Perpetual bond staking", function () {
 
         describe("Events", function () {
             it("Should emit Distribute", async function () {
-                const { factory, stETH, vault, yToken, lpToken, staking } = await createBond();
+                const { factory, stETH, vault, yToken, lpToken, staking } = await createVault();
                 await factory.setStaking(vault.address, staking.address);
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(10));
@@ -344,14 +344,14 @@ describe("Perpetual bond staking", function () {
     describe("Collect surplus", function () {
         describe("Validations", function () {
             it("Should revert if msg.sender != factory", async function () {
-                const { other, staking } = await createBond();
+                const { other, staking } = await createVault();
                 await expect(
                     staking.connect(other).collectSurplus(other.address)
                 ).to.be.revertedWith("!factory");
             });
 
             it("Should revert if feeTo is 0", async function () {
-                const { factory, staking, stETH, vault } = await createBond();
+                const { factory, staking, stETH, vault } = await createVault();
                 await stETH.mint(vault.address, numToBN(1));
                 await vault.harvest();
                 await expect(factory.collectSurplus(staking.address)).to.be.revertedWith(
@@ -360,7 +360,7 @@ describe("Perpetual bond staking", function () {
             });
 
             it("Should return early if surplus is 0", async function () {
-                const { factory, staking, feeTo } = await createBond();
+                const { factory, staking, feeTo } = await createVault();
                 await factory.setFeeTo(feeTo.address);
                 await expect(factory.collectSurplus(staking.address)).to.not.emit(
                     staking,
@@ -371,7 +371,7 @@ describe("Perpetual bond staking", function () {
 
         describe("Success", function () {
             it("Should collect surplus", async function () {
-                const { feeTo, factory, stETH, vault, yToken, staking } = await createBond();
+                const { feeTo, factory, stETH, vault, yToken, staking } = await createVault();
                 await factory.setStaking(vault.address, staking.address);
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(8));
@@ -386,7 +386,7 @@ describe("Perpetual bond staking", function () {
 
         describe("Events", function () {
             it("Should emit CollectSurplus", async function () {
-                const { feeTo, factory, stETH, vault, yToken, staking } = await createBond();
+                const { feeTo, factory, stETH, vault, yToken, staking } = await createVault();
                 await factory.setStaking(vault.address, staking.address);
                 await vault.mint(numToBN(10));
                 await staking.stake(yToken.address, numToBN(8));

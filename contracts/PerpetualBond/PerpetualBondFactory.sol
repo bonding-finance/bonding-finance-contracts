@@ -11,12 +11,12 @@ import "../utils/Owned.sol";
  */
 contract PerpetualBondFactory is IPerpetualBondFactory, PerpetualBondDeployer, Owned {
     FeeInfo public override feeInfo;
-    address[] public override allBonds;
+    address[] public override allVaults;
 
-    mapping(address => address) public override getBond;
+    mapping(address => address) public override getVault;
 
-    function allBondsLength() external view override returns (uint256) {
-        return allBonds.length;
+    function allVaultsLength() external view override returns (uint256) {
+        return allVaults.length;
     }
 
     //////////////////////////
@@ -24,33 +24,33 @@ contract PerpetualBondFactory is IPerpetualBondFactory, PerpetualBondDeployer, O
     //////////////////////////
 
     /**
-     * @notice Creates the perpetual bond contract
-     * @dev Deploys vault, dToken, yToken, and staking contract
-     * @param token Underlying token of the bond
-     * @return bond Address of the created contract
+     * @notice Creates the perpetual bond vault contract
+     * @dev Deploys vault, dToken, yToken contracts
+     * @param token Underlying token of the vault
+     * @return vault Address of the created vault
      */
-    function createBond(address token) external override onlyOwner returns (address bond) {
+    function createVault(address token) external override onlyOwner returns (address vault) {
         require(token != address(0));
-        require(getBond[token] == address(0), "Bond exists");
+        require(getVault[token] == address(0), "Bond exists");
 
-        bond = deploy(address(this), token);
-        getBond[token] = bond;
-        allBonds.push(bond);
+        vault = deploy(address(this), token);
+        getVault[token] = vault;
+        allVaults.push(vault);
 
-        emit BondCreated(token, bond);
+        emit VaultCreated(token, vault);
     }
 
-    function setStaking(address bond, address staking) external override onlyOwner {
+    function setStaking(address vault, address staking) external override onlyOwner {
         require(staking != address(0));
 
-        IPerpetualBondVault(bond).setStaking(staking);
+        IPerpetualBondVault(vault).setStaking(staking);
     }
 
-    function collectFees(address bond) external override onlyOwner {
-        require(bond != address(0));
+    function collectFees(address vault) external override onlyOwner {
+        require(vault != address(0));
         require(feeInfo.feeTo != address(0), "feeTo is 0");
 
-        IPerpetualBondVault(bond).collectFees(feeInfo.feeTo);
+        IPerpetualBondVault(vault).collectFees(feeInfo.feeTo);
     }
 
     function collectSurplus(address staking) external override onlyOwner {

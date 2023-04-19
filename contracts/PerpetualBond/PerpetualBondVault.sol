@@ -149,7 +149,8 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
      */
     function setStaking(address _staking) external override {
         require(msg.sender == factory, "!factory");
-
+        require(IPerpetualBondStaking(_staking).vault() == address(this), "!valid");
+        
         staking = _staking;
     }
 
