@@ -39,14 +39,14 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
      * @notice Calculates `_user` pending rewards
      * @param _user Address of the user
      * @param _token Address of the staked token
-     * @return amount Amount of pending rewards for `_user`
+     * @return rewards Amount of pending rewards for `_user`
      */
     function pendingRewards(
         address _user,
         address _token
-    ) public view override returns (uint256 amount) {
+    ) public view override returns (uint256 rewards) {
         UserInfo memory user = userInfo[_user][_token];
-        amount = ((user.amount * poolInfo[_token].accRewardsPerShare) / 1e18) - user.rewardDebt;
+        rewards = ((user.amount * poolInfo[_token].accRewardsPerShare) / 1e18) - user.rewardDebt;
     }
 
     /**
@@ -145,13 +145,17 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
     function _claimRewards(address user, address token) internal {
         if (userInfo[user][token].amount == 0) return;
 
-        uint256 pending = pendingRewards(user, token);
-        if (pending == 0) return;
+        uint256 rewards = pendingRewards(user, token);
+        if (rewards == 0) return;
 
-        ERC20(rewardToken).safeTransfer(user, pending);
-        poolInfo[token].claimedRewards += pending;
+        uint256 balance = ERC20(rewardToken).balanceOf(address(this));
+        // In case of rounding error
+        if (rewards > balance) rewards = balance;
 
-        emit Claim(user, token, pending);
+        ERC20(rewardToken).safeTransfer(user, rewards);
+        poolInfo[token].claimedRewards += rewards;
+
+        emit Claim(user, token, rewards);
     }
 
     //////////////////////////

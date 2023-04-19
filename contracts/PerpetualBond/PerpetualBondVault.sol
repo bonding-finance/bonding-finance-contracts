@@ -97,6 +97,10 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
         uint256 feeAmount = _chargeFee(amount);
         redeemAmount = amount - feeAmount;
 
+        uint256 balance = ERC20(token).balanceOf(address(this));
+        // In case of rounding error
+        if (redeemAmount > balance) redeemAmount = balance;
+        
         ERC20(token).safeTransfer(msg.sender, redeemAmount);
 
         emit Redeem(msg.sender, redeemAmount);
