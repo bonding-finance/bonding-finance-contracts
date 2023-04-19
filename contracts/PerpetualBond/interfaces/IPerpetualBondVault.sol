@@ -22,6 +22,8 @@ interface IPerpetualBondVault {
 
     function totalDeposits() external view returns (uint256);
 
+    function fees() external view returns (uint256);
+
     function pendingRewards() external view returns (uint256);
 
     function mint(uint256 amount) external returns (uint256 mintAmount);
@@ -35,4 +37,6 @@ interface IPerpetualBondVault {
     //////////////////////////
 
     function setStaking(address staking) external;
+
+    function collectFees(address feeTo) external;
 }

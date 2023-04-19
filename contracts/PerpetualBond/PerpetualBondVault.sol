@@ -25,6 +25,7 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
     address public immutable override yToken;
     address public override staking;
     uint256 public override totalDeposits;
+    uint256 public override fees;
 
     constructor() {
         (factory, token) = PerpetualBondDeployer(msg.sender).parameters();
@@ -55,9 +56,9 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
      */
     function pendingRewards() public view override returns (uint256 amount) {
         uint256 balance = ERC20(token).balanceOf(address(this));
-        if (totalDeposits >= balance) return 0;
+        if (totalDeposits + fees >= balance) return 0;
 
-        amount = balance - totalDeposits;
+        amount = balance - totalDeposits - fees;
     }
 
     /**
@@ -66,6 +67,8 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
      * @return mintAmount Amount of dTokens and yTokens minted
      */
     function mint(uint256 amount) external override nonReentrant returns (uint256 mintAmount) {
+        if (amount == 0) return 0;
+
         ERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         uint256 feeAmount = _chargeFee(amount);
         mintAmount = amount - feeAmount;
@@ -85,6 +88,8 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
      * @return redeemAmount The amount of underlying tokens redeemed
      */
     function redeem(uint256 amount) external override nonReentrant returns (uint256 redeemAmount) {
+        if (amount == 0) return 0;
+
         PerpetualBondToken(dToken).burn(msg.sender, amount);
         PerpetualBondToken(yToken).burn(msg.sender, amount);
         totalDeposits -= amount;
@@ -120,11 +125,13 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
      * @return feeAmount The fee amount charged
      */
     function _chargeFee(uint256 amount) internal returns (uint256 feeAmount) {
-        (address feeTo, uint256 fee) = IPerpetualBondFactory(factory).feeInfo();
-        if (feeTo == address(0) || fee == 0) return 0;
+        if (amount == 0) return 0;
+
+        (, uint256 fee) = IPerpetualBondFactory(factory).feeInfo();
+        if (fee == 0) return 0;
 
         feeAmount = (amount * fee) / 10000;
-        ERC20(token).safeTransfer(feeTo, feeAmount);
+        fees += feeAmount;
 
         return feeAmount;
     }
@@ -142,5 +149,18 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
         require(msg.sender == factory, "!factory");
 
         staking = _staking;
+    }
+
+    /**
+     * @notice Collects fees
+     * @param feeTo Address to send fees to
+     */
+    function collectFees(address feeTo) external override {
+        require(msg.sender == factory, "!factory");
+
+        if (fees == 0) return;
+
+        ERC20(token).safeTransfer(feeTo, fees);
+        delete fees;
     }
 }
