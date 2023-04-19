@@ -50,6 +50,11 @@ describe("Perpetual bond vault", function () {
                 const { owner, yToken } = await createBond();
                 await expect(yToken.mint(owner.address, 1)).to.be.revertedWith("!vault");
             });
+
+            it("Should return early if amount is 0", async function () {
+                const { vault } = await createBond();
+                await expect(vault.mint(0)).to.not.emit(vault, "Mint");
+            });
         });
 
         describe("Success", function () {
@@ -95,6 +100,11 @@ describe("Perpetual bond vault", function () {
             it("Should not allow burn except by vault", async function () {
                 const { owner, yToken } = await createBond();
                 await expect(yToken.burn(owner.address, 1)).to.be.revertedWith("!vault");
+            });
+
+            it("Should return early if amount is 0", async function () {
+                const { vault } = await createBond();
+                await expect(vault.redeem(0)).to.not.emit(vault, "Redeem");
             });
         });
 
@@ -167,12 +177,12 @@ describe("Perpetual bond vault", function () {
 
     describe("Harvest", function () {
         describe("Validations", function () {
-            it("Should not call distribute() if no pending rewards", async function () {
+            it("Should return early if no pending rewards", async function () {
                 const { vault } = await createBond();
                 await expect(vault.harvest()).to.not.emit(vault, "Harvest");
             });
 
-            it("Should not call distribute() if staking is 0", async function () {
+            it("Should return early if staking is 0", async function () {
                 const { vault } = await createBond();
                 await vault.mint(numToBN(10));
                 await expect(vault.harvest()).to.not.emit(vault, "Harvest");
@@ -199,6 +209,17 @@ describe("Perpetual bond vault", function () {
                 await staking.stake(yToken.address, numToBN(10));
                 await stETH.mint(vault.address, numToBN(1));
                 await expect(vault.harvest()).to.emit(vault, "Harvest").withArgs(numToBN(1));
+            });
+        });
+    });
+
+    describe("Set staking", function () {
+        describe("Validations", function () {
+            it("Should revert if msg.sender != factory", async function () {
+                const { vault } = await createBond();
+                await expect(vault.setStaking(constants.AddressZero)).to.be.revertedWith(
+                    "!factory"
+                );
             });
         });
     });

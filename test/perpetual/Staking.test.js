@@ -100,6 +100,14 @@ describe("Perpetual bond staking", function () {
                 expect(userInfo.amount).to.equal(numToBN(10));
                 expect(userInfo.rewardDebt).to.equal(0);
             });
+
+            it("Should stake 0", async function () {
+                const { owner, yToken, staking } = await createBond();
+                await staking.stake(yToken.address, 0);
+                const userInfo = await staking.userInfo(yToken.address, owner.address);
+                expect(userInfo.amount).to.equal(0);
+                expect(userInfo.rewardDebt).to.equal(0);
+            });
         });
 
         describe("Events", function () {
