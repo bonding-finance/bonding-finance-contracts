@@ -107,7 +107,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
     }
 
     /**
-     * Calculates the total amount of rewards accrued
+     * @notice Calculates the total amount of rewards accrued
      * @return totalRewards Total rewards accrued
      */
     function _totalAccRewards() internal view returns (uint256 totalRewards) {
@@ -115,7 +115,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
     }
 
     /**
-     * Calculates the total amount of claimed rewards
+     * @notice Calculates the total amount of claimed rewards
      * @return totalClaimed Total rewards claimed
      */
     function _totalClaimedRewards() internal view returns (uint256 totalClaimed) {
@@ -123,7 +123,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
     }
 
     /**
-     * Validates `token` is a supported token
+     * @notice Validates `token` is a supported token
      * @param token Token to validate
      */
     function _validateToken(address token) internal view {
@@ -203,6 +203,9 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
         }
     }
 
+    /**
+     * @notice Collects earmarked fees (surplus yield)
+     */
     function collectFees() external override {
         require(msg.sender == factory, "!factory");
 

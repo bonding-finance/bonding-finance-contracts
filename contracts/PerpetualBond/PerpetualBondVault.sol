@@ -104,11 +104,10 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
      * @dev Will return if `staking` or pending rewards is 0
      */
     function harvest() external override nonReentrant {
-        if (staking == address(0)) return;
-
         uint256 amount = pendingRewards();
         if (amount == 0) return;
 
+        if (staking == address(0)) return;
         ERC20(token).safeTransfer(staking, amount);
         IPerpetualBondStaking(staking).distribute();
 
@@ -134,6 +133,11 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
     /* Restricted Functions */
     //////////////////////////
 
+    /**
+     * @notice Sets the staking contract
+     * @dev Can be changed to swap rewards receiver
+     * @param _staking Staking contract address
+     */
     function setStaking(address _staking) external {
         require(msg.sender == factory, "!factory");
 
