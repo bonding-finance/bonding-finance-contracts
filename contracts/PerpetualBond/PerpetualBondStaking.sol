@@ -188,7 +188,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
             yTokenPool.accRewardsPerShare += (yTokenRewardAmount * 1e18) / yTokenStaked;
             yTokenPool.accRewards += yTokenRewardAmount;
 
-            emit Distribute(yToken, yTokenRewardAmount);
+            emit Distribute(yToken, block.timestamp, yTokenRewardAmount);
         }
 
         if (miscRewardAmount != 0) {
@@ -197,14 +197,14 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
             if (lpToken == address(0) || ERC20(lpToken).balanceOf(address(this)) == 0) {
                 surplus += miscRewardAmount;
 
-                emit Distribute(factory, miscRewardAmount);
+                emit Distribute(factory, block.timestamp, miscRewardAmount);
             } else {
                 uint256 lpStaked = ERC20(lpToken).balanceOf(address(this));
                 PoolInfo storage lpTokenPool = poolInfo[lpToken];
                 lpTokenPool.accRewardsPerShare += (miscRewardAmount * 1e18) / lpStaked;
                 lpTokenPool.accRewards += miscRewardAmount;
 
-                emit Distribute(lpToken, miscRewardAmount);
+                emit Distribute(lpToken, block.timestamp, miscRewardAmount);
             }
         }
     }
