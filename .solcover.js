@@ -2,6 +2,6 @@ module.exports = {
     skipFiles: [
         "testing/",
         "utils/",
-        "ERC20/",
+        "erc20/",
     ],
 };

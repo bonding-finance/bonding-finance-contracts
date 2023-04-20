@@ -145,12 +145,10 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
 
     /**
      * @notice Sets the staking contract
-     * @dev Can be changed to swap rewards receiver
      * @param _staking Staking contract address
      */
     function setStaking(address _staking) external override {
         require(msg.sender == factory, "!factory");
-        require(IPerpetualBondStaking(_staking).vault() == address(this), "!valid");
         
         staking = _staking;
     }

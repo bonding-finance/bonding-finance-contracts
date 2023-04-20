@@ -25,7 +25,7 @@ contract PerpetualBondFactory is IPerpetualBondFactory, PerpetualBondDeployer, O
 
     /**
      * @notice Creates the perpetual bond vault contract
-     * @dev Deploys vault, dToken, yToken contracts
+     * @dev Deploys vault, dToken, and yToken contracts
      * @param token Underlying token of the vault
      * @return vault Address of the created vault
      */
@@ -42,6 +42,7 @@ contract PerpetualBondFactory is IPerpetualBondFactory, PerpetualBondDeployer, O
 
     function setStaking(address vault, address staking) external override onlyOwner {
         require(staking != address(0));
+        require(IPerpetualBondStaking(staking).vault() == vault, "!valid");
 
         IPerpetualBondVault(vault).setStaking(staking);
     }
