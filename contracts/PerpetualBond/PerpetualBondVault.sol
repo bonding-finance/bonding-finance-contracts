@@ -59,10 +59,11 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
         if (amount == 0) return 0;
 
         ERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        
         uint256 feeAmount = _chargeFee(amount);
         mintAmount = amount - feeAmount;
         totalDeposits += mintAmount;
-
+ 
         PerpetualBondToken(dToken).mint(msg.sender, mintAmount);
         PerpetualBondToken(yToken).mint(msg.sender, mintAmount);
 

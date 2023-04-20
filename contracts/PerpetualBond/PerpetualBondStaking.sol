@@ -145,7 +145,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
     function _claimRewards(address token, address user) internal {
         if (userInfo[token][user].amount == 0) return;
 
-        uint256 rewards = pendingRewards(user, token);
+        uint256 rewards = pendingRewards(token, user);
         if (rewards == 0) return;
 
         uint256 balance = ERC20(rewardToken).balanceOf(address(this));

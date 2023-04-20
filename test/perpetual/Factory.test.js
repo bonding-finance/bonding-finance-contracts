@@ -72,7 +72,7 @@ describe("Perpetual bond factory", function () {
             it("Should revert if perpetual bond exists", async function () {
                 const { factory, stETH } = await loadFixture(deployFixture);
                 await factory.createVault(stETH.address);
-                await expect(factory.createVault(stETH.address)).to.be.revertedWith("Bond exists");
+                await expect(factory.createVault(stETH.address)).to.be.revertedWith("Vault exists");
             });
         });
 

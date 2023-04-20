@@ -399,4 +399,19 @@ describe("Perpetual bond staking", function () {
             });
         });
     });
+
+    describe("General testing", function () {
+        it("Should success", async function () {
+            const { factory, owner, stETH, yToken, vault, staking } = await createVault();
+            await factory.setStaking(vault.address, staking.address);
+            await vault.mint(numToBN(10));
+            await staking.stake(yToken.address, numToBN(10));
+            await stETH.mint(vault.address, numToBN(1));
+            await vault.harvest();
+            await stETH.mint(vault.address, numToBN(1));
+            await vault.harvest();
+            await staking.stake(yToken.address, numToBN(0));
+            expect(await stETH.balanceOf(owner.address)).to.equal(numToBN(92))
+        });
+    });
 });
