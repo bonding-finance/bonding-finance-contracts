@@ -64,6 +64,8 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
      * @param amount Amount of tokens to unstake
      */
     function unstake(address token, uint256 amount) external override nonReentrant {
+        if (amount == 0) return;
+
         _validateToken(token);
         _harvestRewards();
         _claimRewards(token, msg.sender);
@@ -71,6 +73,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
         UserInfo storage user = userInfo[token][msg.sender];
         user.amount -= amount;
         user.rewardDebt = (user.amount * poolInfo[token].accRewardsPerShare) / 1e18;
+        
         ERC20(token).safeTransfer(msg.sender, amount);
 
         emit Unstake(msg.sender, token, amount);
