@@ -31,7 +31,7 @@ contract PerpetualBondFactory is IPerpetualBondFactory, PerpetualBondDeployer, O
      */
     function createVault(address token) external override onlyOwner returns (address vault) {
         require(token != address(0));
-        require(getVault[token] == address(0), "Bond exists");
+        require(getVault[token] == address(0), "Vault exists");
 
         vault = deploy(address(this), token);
         getVault[token] = vault;

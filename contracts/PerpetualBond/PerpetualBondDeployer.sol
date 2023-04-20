@@ -13,9 +13,9 @@ contract PerpetualBondDeployer is IPerpetualBondDeployer {
     Parameters public override parameters;
 
     /**
-     * @notice Deploys bond contract
+     * @notice Deploys vault contract
      * @param factory Factory address
-     * @param token Underlying token of the bond
+     * @param token Underlying token of the vault
      */
     function deploy(address factory, address token) internal returns (address vault) {
         parameters = Parameters({factory: factory, token: token});
