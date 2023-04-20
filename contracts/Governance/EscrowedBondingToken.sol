@@ -20,6 +20,7 @@ contract EscrowedBondingToken is IEscrowedBondingToken, ERC20, Owned {
 
     mapping(address => VestingDetails) public override vestingInfo;
     mapping(address => bool) public override minters;
+    mapping(address => bool) public override transferers;
 
     constructor(uint256 _vestingDuration) ERC20("Escrowed Bonding Finance Token", "esBND", 18) {
         vestingDuration = _vestingDuration;
@@ -37,16 +38,8 @@ contract EscrowedBondingToken is IEscrowedBondingToken, ERC20, Owned {
 
         if (amount == 0) return;
 
-        ERC20(address(this)).safeTransferFrom(msg.sender, address(this), amount);
+        _burn(msg.sender, amount);
         vestingInfo[msg.sender].vestingAmount += amount;
-    }
-
-    /**
-     * @notice Claims unlocked BND
-     * @return amount Amount of BND claimed
-     */
-    function claim() external override returns (uint256 amount) {
-        return _claim(msg.sender);
     }
 
     /**
@@ -71,7 +64,6 @@ contract EscrowedBondingToken is IEscrowedBondingToken, ERC20, Owned {
         _updateVesting(user);
         amount = claimable(user);
         vestingInfo[user].claimedAmount += amount;
-        _burn(address(this), amount);
         BondingToken(bnd).mint(user, amount);
 
         emit Claim(user, amount);
@@ -109,6 +101,22 @@ contract EscrowedBondingToken is IEscrowedBondingToken, ERC20, Owned {
     //////////////////////////
     /* Restricted Functions */
     //////////////////////////
+
+    function transfer(address to, uint256 amount) public override returns (bool) {
+        require(transferers[msg.sender], "!transferer");
+
+        return super.transfer(to, amount);
+    }
+
+    function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
+        require(transferers[msg.sender], "!transferer");
+
+        return super.transferFrom(from, to, amount);
+    }
+
+    function setTransferer(address transferer, bool allowed) external override onlyOwner {
+        transferers[transferer] = allowed;
+    }
 
     function mint(address user, uint256 amount) external override {
         require(minters[msg.sender], "!minter");

@@ -25,6 +25,64 @@ describe("esBND", function () {
         });
     });
 
+    describe("Set transferer", function () {
+        describe("Validations", function () {
+            it("Should only allow owner", async function () {
+                const { esBND, other } = await loadFixture(deployFixture);
+                await expect(
+                    esBND.connect(other).setTransferer(other.address, true)
+                ).to.be.revertedWith("UNAUTHORIZED");
+            });
+        });
+
+        describe("Success", function () {
+            it("Should set transferer", async function () {
+                const { esBND, owner, other } = await loadFixture(deployFixture);
+                await esBND.connect(owner).setTransferer(other.address, true);
+                expect(await esBND.transferers(other.address)).to.equal(true);
+            });
+        });
+    });
+
+    describe("Transfers", function () {
+        describe("Validations", function () {
+            it("Should only allow transferer", async function () {
+                const { esBND, other } = await loadFixture(deployFixture);
+                await expect(esBND.connect(other).transfer(other.address, 1)).to.be.revertedWith(
+                    "!transferer"
+                );
+                await expect(
+                    esBND.connect(other).transferFrom(other.address, other.address, 1)
+                ).to.be.revertedWith("!transferer");
+            });
+        });
+
+        describe("Success", function () {
+            it("Should transfer", async function () {
+                const { esBND, owner, other } = await loadFixture(deployFixture);
+                await esBND.setMinter(owner.address, true);
+                await esBND.mint(owner.address, 100);
+
+                await esBND.setTransferer(owner.address, true);
+                await esBND.connect(owner).transfer(other.address, 100);
+                expect(await esBND.balanceOf(other.address)).to.equal(100);
+                expect(await esBND.balanceOf(owner.address)).to.equal(0);
+            });
+
+            it("Should transferFrom", async function () {
+                const { esBND, owner, other } = await loadFixture(deployFixture);
+                await esBND.setMinter(owner.address, true);
+                await esBND.mint(other.address, 100);
+                await esBND.connect(other).approve(owner.address, 100);
+
+                await esBND.setTransferer(owner.address, true);
+                await esBND.connect(owner).transferFrom(other.address, owner.address, 100);
+                expect(await esBND.balanceOf(other.address)).to.equal(0);
+                expect(await esBND.balanceOf(owner.address)).to.equal(100);
+            });
+        });
+    });
+
     describe("Set minter", function () {
         describe("Validations", function () {
             it("Should only allow owner", async function () {
@@ -108,13 +166,17 @@ describe("esBND", function () {
             await esBND.vest(100);
             const ONE_QUARTER_YEAR = (365 * 24 * 60 * 60) / 4;
             await time.increase(ONE_QUARTER_YEAR);
-            await esBND.claim();
-            expect(await esBND.balanceOf(esBND.address)).to.equal(75);
+            await esBND.vest(0);
             expect(await bnd.balanceOf(owner.address)).to.equal(25);
             await time.increase(ONE_QUARTER_YEAR);
-            await esBND.claim();
-            expect(await esBND.balanceOf(esBND.address)).to.equal(50);
+            await esBND.vest(0);
             expect(await bnd.balanceOf(owner.address)).to.equal(50);
+            await time.increase(ONE_QUARTER_YEAR);
+            await esBND.vest(0);
+            expect(await bnd.balanceOf(owner.address)).to.equal(75);
+            await time.increase(ONE_QUARTER_YEAR);
+            await esBND.vest(0);
+            expect(await bnd.balanceOf(owner.address)).to.equal(100);
         });
     });
 });
