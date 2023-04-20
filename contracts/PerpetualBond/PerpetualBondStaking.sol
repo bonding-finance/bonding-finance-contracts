@@ -73,7 +73,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
         UserInfo storage user = userInfo[token][msg.sender];
         user.amount -= amount;
         user.rewardDebt = (user.amount * poolInfo[token].accRewardsPerShare) / 1e18;
-        
+
         ERC20(token).safeTransfer(msg.sender, amount);
 
         emit Unstake(msg.sender, token, amount);
