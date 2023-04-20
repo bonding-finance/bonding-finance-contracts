@@ -320,23 +320,23 @@ describe("Perpetual bond staking", function () {
                 await stETH.mint(vault.address, numToBN(1));
                 await expect(vault.harvest())
                     .to.emit(staking, "Distribute")
-                    .withArgs(yToken.address, (await time.latest()) + 1, numToBN(1));
+                    .withArgs(yToken.address, (await time.latest()) + 1, numToBN(1), numToBN(10));
 
                 await staking.unstake(yToken.address, numToBN(2));
                 await stETH.mint(vault.address, numToBN(1));
                 await expect(vault.harvest())
                     .to.emit(staking, "Distribute")
-                    .withArgs(yToken.address, await time.latest(), numToBN(0.8))
+                    .withArgs(yToken.address, await time.latest(), numToBN(0.8), numToBN(8))
                     .to.emit(staking, "Distribute")
-                    .withArgs(factory.address, await time.latest(), numToBN(0.2));
+                    .withArgs(factory.address, await time.latest(), numToBN(0.2), 0);
 
                 await staking.stake(lpToken.address, numToBN(2));
                 await stETH.mint(vault.address, numToBN(1));
                 await expect(vault.harvest())
                     .to.emit(staking, "Distribute")
-                    .withArgs(yToken.address, await time.latest(), numToBN(0.8))
+                    .withArgs(yToken.address, await time.latest(), numToBN(0.8), numToBN(8))
                     .to.emit(staking, "Distribute")
-                    .withArgs(lpToken.address, await time.latest(), numToBN(0.2));
+                    .withArgs(lpToken.address, await time.latest(), numToBN(0.2), numToBN(2));
             });
         });
     });
