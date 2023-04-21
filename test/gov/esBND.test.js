@@ -8,9 +8,9 @@ describe("esBND", function () {
     async function deployFixture() {
         const vestingDuration = 365 * 24 * 60 * 60;
         const [owner, other] = await ethers.getSigners();
-        const EsBND = await ethers.getContractFactory("EscrowedBondingToken");
+        const EsBND = await ethers.getContractFactory("EscrowedBondingFinanceToken");
         const esBND = await EsBND.deploy(vestingDuration);
-        const BND = await ethers.getContractFactory("BondingToken");
+        const BND = await ethers.getContractFactory("BondingFinanceToken");
         const bnd = BND.attach(await esBND.bnd());
         await esBND.approve(esBND.address, constants.MaxUint256);
 
@@ -19,11 +19,12 @@ describe("esBND", function () {
 
     describe("Deployment", function () {
         it("Should have correct initial values", async function () {
-            const { esBND, vestingDuration, owner } = await loadFixture(deployFixture);
+            const { esBND, bnd, vestingDuration, owner } = await loadFixture(deployFixture);
             expect(await esBND.owner()).to.equal(owner.address);
             expect(await esBND.vestingDuration()).to.equal(vestingDuration);
             expect(await esBND.bnd()).to.not.equal(constants.AddressZero);
             expect(await esBND.balanceOf(owner.address)).to.equal(numToBN(1_000_000));
+            expect(await bnd.balanceOf(esBND.address)).to.equal(numToBN(1_000_000));
         });
     });
 

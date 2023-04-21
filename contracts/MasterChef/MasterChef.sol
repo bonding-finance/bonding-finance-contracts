@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./interfaces/IMasterChef.sol";
-import "../Governance/EscrowedBondingToken.sol";
+import "../Governance/EscrowedBondingFinanceToken.sol";
 import "../erc20/ERC20.sol";
 import "../erc20/SafeERC20.sol";
 import "../utils/ReentrancyGuard.sol";

@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import "./interfaces/IEscrowedBondingToken.sol";
-import "./BondingToken.sol";
+import "./interfaces/IEscrowedBondingFinanceToken.sol";
+import "./BondingFinanceToken.sol";
 import "../erc20/ERC20.sol";
 import "../erc20/SafeERC20.sol";
 import "../utils/Owned.sol";
@@ -12,7 +12,7 @@ import "../utils/Owned.sol";
  * @title Escrowed Bonding Finance DAO Token
  * @author Bonding Finance
  */
-contract EscrowedBondingToken is IEscrowedBondingToken, ERC20, Owned {
+contract EscrowedBondingFinanceToken is IEscrowedBondingFinanceToken, ERC20, Owned {
     using SafeERC20 for ERC20;
 
     address public immutable override bnd;
@@ -25,7 +25,7 @@ contract EscrowedBondingToken is IEscrowedBondingToken, ERC20, Owned {
         _mint(msg.sender, 1_000_000 ether);
         vestingDuration = _vestingDuration;
 
-        bnd = address(new BondingToken{salt: keccak256(abi.encode("BND"))}());
+        bnd = address(new BondingFinanceToken{salt: keccak256(abi.encode("BND"))}());
     }
 
     /**
@@ -37,8 +37,8 @@ contract EscrowedBondingToken is IEscrowedBondingToken, ERC20, Owned {
         _claim(msg.sender);
 
         if (amount == 0) return;
-
         _burn(msg.sender, amount);
+        
         vestingInfo[msg.sender].vestingAmount += amount;
     }
 
@@ -62,9 +62,11 @@ contract EscrowedBondingToken is IEscrowedBondingToken, ERC20, Owned {
      */
     function _claim(address user) internal returns (uint256 amount) {
         _updateVesting(user);
+
         amount = claimable(user);
         vestingInfo[user].claimedAmount += amount;
-        BondingToken(bnd).mint(user, amount);
+
+        ERC20(bnd).transfer(user, amount);
 
         emit Claim(user, amount);
     }

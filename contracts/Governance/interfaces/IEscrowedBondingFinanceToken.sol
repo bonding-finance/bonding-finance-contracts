@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
  * @title Escrowed Bonding Finance DAO token interface
  * @author Bonding Finance
  */
-interface IEscrowedBondingToken {
+interface IEscrowedBondingFinanceToken {
     event Claim(address indexed user, uint256 amount);
 
     struct VestingDetails {
