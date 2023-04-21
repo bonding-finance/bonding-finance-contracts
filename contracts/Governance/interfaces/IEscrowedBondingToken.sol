@@ -31,8 +31,6 @@ interface IEscrowedBondingToken {
             uint256 lastVestingTime
         );
 
-    function minters(address) external view returns (bool);
-
     function transferers(address) external view returns (bool);
 
     function vest(uint256 amount) external;
@@ -40,8 +38,4 @@ interface IEscrowedBondingToken {
     function claimable(address user) external view returns (uint256 amount);
 
     function setTransferer(address transferer, bool allowed) external;
-
-    function mint(address user, uint256 amount) external;
-
-    function setMinter(address minter, bool allowed) external;
 }

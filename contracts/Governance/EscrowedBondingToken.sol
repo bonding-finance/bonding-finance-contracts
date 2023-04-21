@@ -19,10 +19,10 @@ contract EscrowedBondingToken is IEscrowedBondingToken, ERC20, Owned {
     uint256 public immutable override vestingDuration;
 
     mapping(address => VestingDetails) public override vestingInfo;
-    mapping(address => bool) public override minters;
     mapping(address => bool) public override transferers;
 
     constructor(uint256 _vestingDuration) ERC20("Escrowed Bonding Finance Token", "esBND", 18) {
+        _mint(msg.sender, 1_000_000 ether);
         vestingDuration = _vestingDuration;
 
         bnd = address(new BondingToken{salt: keccak256(abi.encode("BND"))}());
@@ -116,14 +116,5 @@ contract EscrowedBondingToken is IEscrowedBondingToken, ERC20, Owned {
 
     function setTransferer(address transferer, bool allowed) external override onlyOwner {
         transferers[transferer] = allowed;
-    }
-
-    function mint(address user, uint256 amount) external override {
-        require(minters[msg.sender], "!minter");
-        _mint(user, amount);
-    }
-
-    function setMinter(address minter, bool allowed) external override onlyOwner {
-        minters[minter] = allowed;
     }
 }
