@@ -25,7 +25,7 @@ contract EscrowedBondingFinanceToken is IEscrowedBondingFinanceToken, ERC20, Own
         _mint(msg.sender, 1_000_000 ether);
 
         vestingDuration = _vestingDuration;
-        bnd = address(new BondingFinanceToken{salt: keccak256(abi.encode("BND"))}());
+        bnd = address(new BondingFinanceToken{salt: keccak256(abi.encode("Bonding Finance Token"))}());
     }
 
     /**
