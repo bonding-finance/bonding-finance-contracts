@@ -23,14 +23,14 @@ contract EscrowedBondingFinanceToken is IEscrowedBondingFinanceToken, ERC20, Own
 
     constructor(uint256 _vestingDuration) ERC20("Escrowed Bonding Finance Token", "esBND", 18) {
         _mint(msg.sender, 1_000_000 ether);
-        vestingDuration = _vestingDuration;
 
+        vestingDuration = _vestingDuration;
         bnd = address(new BondingFinanceToken{salt: keccak256(abi.encode("BND"))}());
     }
 
     /**
      * @notice Vests `amount` of esBND linearly over vesting period
-     * @dev Claims unlocked BND
+     * @dev Will only claim if amount is 0
      * @param amount Amount of esBND to vest
      */
     function vest(uint256 amount) external override {
@@ -38,7 +38,7 @@ contract EscrowedBondingFinanceToken is IEscrowedBondingFinanceToken, ERC20, Own
 
         if (amount == 0) return;
         _burn(msg.sender, amount);
-        
+
         vestingInfo[msg.sender].vestingAmount += amount;
     }
 
@@ -56,7 +56,7 @@ contract EscrowedBondingFinanceToken is IEscrowedBondingFinanceToken, ERC20, Own
     }
 
     /**
-     * @notice Internal function to claim unlocked BND
+     * @notice Claims and sends BND to `user`
      * @param user User to claim for
      * @return amount Amount of BND claimed
      */
