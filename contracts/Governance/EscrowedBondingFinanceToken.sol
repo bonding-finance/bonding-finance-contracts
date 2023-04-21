@@ -16,15 +16,14 @@ contract EscrowedBondingFinanceToken is IEscrowedBondingFinanceToken, ERC20, Own
     using SafeERC20 for ERC20;
 
     address public immutable override bnd;
-    uint256 public immutable override vestingDuration;
+    uint256 public constant override vestingDuration = 365 days;
 
     mapping(address => VestingDetails) public override vestingInfo;
     mapping(address => bool) public override transferers;
 
-    constructor(uint256 _vestingDuration) ERC20("Escrowed Bonding Finance Token", "esBND", 18) {
+    constructor() ERC20("Escrowed Bonding Finance Token", "esBND", 18) {
         _mint(msg.sender, 1_000_000 ether);
 
-        vestingDuration = _vestingDuration;
         bnd = address(
             new BondingFinanceToken{salt: keccak256(abi.encode("Bonding Finance Token"))}()
         );

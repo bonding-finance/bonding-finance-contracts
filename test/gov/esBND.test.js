@@ -9,7 +9,7 @@ describe("esBND", function () {
         const vestingDuration = 365 * 24 * 60 * 60;
         const [owner, other] = await ethers.getSigners();
         const EsBND = await ethers.getContractFactory("EscrowedBondingFinanceToken");
-        const esBND = await EsBND.deploy(vestingDuration);
+        const esBND = await EsBND.deploy();
         const BND = await ethers.getContractFactory("BondingFinanceToken");
         const bnd = BND.attach(await esBND.bnd());
         await esBND.approve(esBND.address, constants.MaxUint256);
