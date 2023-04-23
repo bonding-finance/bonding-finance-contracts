@@ -104,7 +104,7 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
      */
     function harvest() external override nonReentrant {
         if (staking == address(0)) return;
-        
+
         uint256 amount = pendingRewards();
         if (amount == 0) return;
 

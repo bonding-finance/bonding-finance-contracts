@@ -40,11 +40,15 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
      * @dev Harvests and claims rewards
      * @param token Token to stake
      * @param amount Amount of tokens to stake
+     * @return rewards Amount of rewards claimed
      */
-    function stake(address token, uint256 amount) external override nonReentrant {
+    function stake(
+        address token,
+        uint256 amount
+    ) external override nonReentrant returns (uint256 rewards) {
         _validateToken(token);
         _harvestRewards();
-        _claimRewards(token, msg.sender);
+        rewards = _claimRewards(token, msg.sender);
 
         UserInfo storage user = userInfo[token][msg.sender];
         if (amount != 0) {
@@ -58,17 +62,18 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
 
     /**
      * @notice Unstakes `amount` of `token`
-     * @notice Harvests and claims rewards
-     * @notice token Token to unstake
+     * @dev Harvests and claims rewards
      * @param token Token to unstake
      * @param amount Amount of tokens to unstake
+     * @return rewards Amount of rewards claimed
      */
-    function unstake(address token, uint256 amount) external override nonReentrant {
-        if (amount == 0) return;
-
+    function unstake(
+        address token,
+        uint256 amount
+    ) external override nonReentrant returns (uint256 rewards) {
         _validateToken(token);
         _harvestRewards();
-        _claimRewards(token, msg.sender);
+        rewards = _claimRewards(token, msg.sender);
 
         UserInfo storage user = userInfo[token][msg.sender];
         user.amount -= amount;
@@ -144,12 +149,13 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
      * @notice Claims all pending rewards for `user`
      * @param token Token to claim rewards for
      * @param user User to claim rewards for
+     * @return rewards Amount of rewards claimed
      */
-    function _claimRewards(address token, address user) internal {
-        if (userInfo[token][user].amount == 0) return;
+    function _claimRewards(address token, address user) internal returns (uint256 rewards) {
+        if (userInfo[token][user].amount == 0) return 0;
 
-        uint256 rewards = pendingRewards(token, user);
-        if (rewards == 0) return;
+        rewards = pendingRewards(token, user);
+        if (rewards == 0) return 0;
 
         uint256 balance = ERC20(rewardToken).balanceOf(address(this));
         // In case of rounding error

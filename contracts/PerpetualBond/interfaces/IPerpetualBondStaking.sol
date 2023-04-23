@@ -53,9 +53,9 @@ interface IPerpetualBondStaking {
         view
         returns (uint256 accRewardsPerShare, uint256 accRewards, uint256 claimedRewards);
 
-    function stake(address token, uint256 amount) external;
+    function stake(address token, uint256 amount) external returns (uint256 rewards);
 
-    function unstake(address token, uint256 amount) external;
+    function unstake(address token, uint256 amount) external returns (uint256 rewards);
 
     function emergencyWithdraw(address token) external;
 
