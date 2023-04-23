@@ -169,7 +169,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
      * @notice Distributes rebase rewards from vault to stakers
      * @dev Rebase rewards from unclaimed rewards are redistributed
      */
-    function distribute() external override {
+    function distribute() external override nonReentrant {
         require(msg.sender == vault, "!vault");
 
         // Accounts for rebase from unclaimed rewards
