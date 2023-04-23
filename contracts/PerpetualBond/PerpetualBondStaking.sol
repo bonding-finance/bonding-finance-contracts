@@ -174,40 +174,38 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
 
         // Accounts for rebase from unclaimed rewards
         uint256 balance = ERC20(rewardToken).balanceOf(address(this));
-        uint256 rewardAmount = balance + _totalClaimedRewards() - _totalAccRewards() - surplus;
+        uint256 rewards = balance + _totalClaimedRewards() - _totalAccRewards() - surplus;
 
         uint256 yTokenStaked = ERC20(yToken).balanceOf(address(this));
         uint256 yTokenSupply = ERC20(yToken).totalSupply();
 
         // Forces yToken yield to match rebase yield, regardless of % staked
-        uint256 yTokenRewardAmount = yTokenSupply != 0
-            ? (rewardAmount * yTokenStaked) / yTokenSupply
-            : 0;
-        uint256 miscRewardAmount = rewardAmount - yTokenRewardAmount;
+        uint256 yTokenRewards = yTokenSupply != 0 ? (rewards * yTokenStaked) / yTokenSupply : 0;
+        uint256 miscRewards = rewards - yTokenRewards;
 
         // Distribute allocated rewards to yToken stakers
-        if (yTokenRewardAmount != 0) {
+        if (yTokenRewards != 0) {
             PoolInfo storage yTokenPool = poolInfo[yToken];
-            yTokenPool.accRewardsPerShare += (yTokenRewardAmount * 1e18) / yTokenStaked;
-            yTokenPool.accRewards += yTokenRewardAmount;
+            yTokenPool.accRewardsPerShare += (yTokenRewards * 1e18) / yTokenStaked;
+            yTokenPool.accRewards += yTokenRewards;
 
-            emit Distribute(yToken, block.timestamp, yTokenRewardAmount, yTokenStaked);
+            emit Distribute(yToken, block.timestamp, yTokenRewards, yTokenStaked);
         }
 
-        if (miscRewardAmount != 0) {
+        if (miscRewards != 0) {
             // If `lpToken` is not set or there are none staked, all excess rewards go to the protocol
             // Otherwise, all excess rewards go to LP token stakers
             if (lpToken == address(0) || ERC20(lpToken).balanceOf(address(this)) == 0) {
-                surplus += miscRewardAmount;
+                surplus += miscRewards;
 
-                emit Distribute(factory, block.timestamp, miscRewardAmount, 0);
+                emit Distribute(factory, block.timestamp, miscRewards, 0);
             } else {
                 uint256 lpStaked = ERC20(lpToken).balanceOf(address(this));
                 PoolInfo storage lpTokenPool = poolInfo[lpToken];
-                lpTokenPool.accRewardsPerShare += (miscRewardAmount * 1e18) / lpStaked;
-                lpTokenPool.accRewards += miscRewardAmount;
+                lpTokenPool.accRewardsPerShare += (miscRewards * 1e18) / lpStaked;
+                lpTokenPool.accRewards += miscRewards;
 
-                emit Distribute(lpToken, block.timestamp, miscRewardAmount, lpStaked);
+                emit Distribute(lpToken, block.timestamp, miscRewards, lpStaked);
             }
         }
     }
