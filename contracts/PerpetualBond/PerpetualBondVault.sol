@@ -58,8 +58,6 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
     function deposit(uint256 amount) external override nonReentrant returns (uint256 mintAmount) {
         if (amount == 0) return 0;
 
-        harvest();
-
         ERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
         uint256 feeAmount = _chargeFee(amount);
@@ -81,8 +79,6 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
      */
     function redeem(uint256 amount) external override nonReentrant returns (uint256 redeemAmount) {
         if (amount == 0) return 0;
-
-        harvest();
 
         PerpetualBondToken(dToken).burn(msg.sender, amount);
         PerpetualBondToken(yToken).burn(msg.sender, amount);
