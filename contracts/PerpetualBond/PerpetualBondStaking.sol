@@ -105,9 +105,9 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
      * @dev Rebase rewards from unclaimed rewards are also distributed
      */
     function harvest() public override {
-        if (IPerpetualBondVault(vault).staking() != address(this)) return;
-
-        IPerpetualBondVault(vault).harvest();
+        if (IPerpetualBondVault(vault).staking() == address(this)) {
+            IPerpetualBondVault(vault).harvest();
+        }
 
         // Accounts for rebase from unclaimed rewards
         uint256 balance = ERC20(rewardToken).balanceOf(address(this));
