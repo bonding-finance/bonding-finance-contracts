@@ -129,6 +129,28 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
     }
 
     /**
+     * @notice Claims all pending rewards for `user`
+     * @param token Token to claim rewards for
+     * @param user User to claim rewards for
+     * @return rewards Amount of rewards claimed
+     */
+    function _claimRewards(address token, address user) internal returns (uint256 rewards) {
+        if (userInfo[token][user].amount == 0) return 0;
+
+        rewards = pendingRewards(token, user);
+        if (rewards == 0) return 0;
+
+        uint256 balance = ERC20(rewardToken).balanceOf(address(this));
+        // In case of rounding error
+        if (rewards > balance) rewards = balance;
+
+        ERC20(rewardToken).safeTransfer(user, rewards);
+        poolInfo[token].claimedRewards += rewards;
+
+        emit Claim(user, token, rewards);
+    }
+
+    /**
      * @notice Distributes rewards to stakers
      * @param rewards Amount of rewards to distribute
      */
@@ -191,28 +213,6 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
      */
     function _validateToken(address token) internal view {
         require(token != address(0) && (token == yToken || token == lpToken), "!valid");
-    }
-
-    /**
-     * @notice Claims all pending rewards for `user`
-     * @param token Token to claim rewards for
-     * @param user User to claim rewards for
-     * @return rewards Amount of rewards claimed
-     */
-    function _claimRewards(address token, address user) internal returns (uint256 rewards) {
-        if (userInfo[token][user].amount == 0) return 0;
-
-        rewards = pendingRewards(token, user);
-        if (rewards == 0) return 0;
-
-        uint256 balance = ERC20(rewardToken).balanceOf(address(this));
-        // In case of rounding error
-        if (rewards > balance) rewards = balance;
-
-        ERC20(rewardToken).safeTransfer(user, rewards);
-        poolInfo[token].claimedRewards += rewards;
-
-        emit Claim(user, token, rewards);
     }
 
     //////////////////////////

@@ -22,6 +22,7 @@ describe("esBND", function () {
             const { esBND, bnd, vestingDuration, owner } = await loadFixture(deployFixture);
             expect(await esBND.owner()).to.equal(owner.address);
             expect(await esBND.vestingDuration()).to.equal(vestingDuration);
+            expect(await esBND.transferers(owner.address)).to.equal(true)
             expect(await esBND.bnd()).to.not.equal(constants.AddressZero);
             expect(await esBND.balanceOf(owner.address)).to.equal(numToBN(1_000_000));
             expect(await bnd.balanceOf(esBND.address)).to.equal(numToBN(1_000_000));

@@ -23,6 +23,7 @@ contract EscrowedBondingFinanceToken is IEscrowedBondingFinanceToken, ERC20, Own
 
     constructor() ERC20("Escrowed Bonding Finance Token", "esBND", 18) {
         _mint(msg.sender, 1_000_000 ether);
+        transferers[msg.sender] = true;
 
         bnd = address(
             new BondingFinanceToken{salt: keccak256(abi.encode("Bonding Finance Token"))}()
