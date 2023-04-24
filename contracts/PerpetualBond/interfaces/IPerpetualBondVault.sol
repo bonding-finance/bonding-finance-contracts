@@ -25,7 +25,7 @@ interface IPerpetualBondVault {
 
     function fees() external view returns (uint256);
 
-    function mint(uint256 amount) external returns (uint256 mintAmount);
+    function deposit(uint256 amount) external returns (uint256 mintAmount);
 
     function redeem(uint256 amount) external returns (uint256 redeemAmount);
 

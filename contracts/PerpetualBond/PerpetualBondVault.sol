@@ -55,7 +55,7 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
      * @param amount Amount of underlying tokens to deposit
      * @return mintAmount Amount of dTokens and yTokens minted
      */
-    function mint(uint256 amount) external override nonReentrant returns (uint256 mintAmount) {
+    function deposit(uint256 amount) external override nonReentrant returns (uint256 mintAmount) {
         if (amount == 0) return 0;
 
         harvest();
