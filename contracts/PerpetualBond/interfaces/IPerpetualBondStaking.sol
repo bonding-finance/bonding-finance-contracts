@@ -59,13 +59,13 @@ interface IPerpetualBondStaking {
 
     function emergencyWithdraw(address token) external;
 
+    function harvest() external;
+
     function pendingRewards(address token, address user) external view returns (uint256 rewards);
 
     //////////////////////////
     /* Restricted Functions */
     //////////////////////////
-
-    function distribute() external;
 
     function collectSurplus(address feeTo) external;
 }

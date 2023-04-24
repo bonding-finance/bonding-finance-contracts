@@ -58,6 +58,8 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
     function mint(uint256 amount) external override nonReentrant returns (uint256 mintAmount) {
         if (amount == 0) return 0;
 
+        harvest();
+
         ERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
         uint256 feeAmount = _chargeFee(amount);
@@ -79,6 +81,8 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
      */
     function redeem(uint256 amount) external override nonReentrant returns (uint256 redeemAmount) {
         if (amount == 0) return 0;
+
+        harvest();
 
         PerpetualBondToken(dToken).burn(msg.sender, amount);
         PerpetualBondToken(yToken).burn(msg.sender, amount);
@@ -102,14 +106,13 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
      * @notice Collects pending rebase rewards and sends to staking contract to distribute
      * @dev Will return if `staking` or pending rewards is 0
      */
-    function harvest() external override nonReentrant {
+    function harvest() public override {
         if (staking == address(0)) return;
 
         uint256 amount = pendingRewards();
         if (amount == 0) return;
 
         ERC20(token).safeTransfer(staking, amount);
-        IPerpetualBondStaking(staking).distribute();
 
         emit Harvest(amount);
     }

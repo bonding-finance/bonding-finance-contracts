@@ -47,7 +47,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
         uint256 amount
     ) external override nonReentrant returns (uint256 rewards) {
         _validateToken(token);
-        _harvestRewards();
+        harvest();
         rewards = _claimRewards(token, msg.sender);
 
         UserInfo storage user = userInfo[token][msg.sender];
@@ -72,7 +72,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
         uint256 amount
     ) external override nonReentrant returns (uint256 rewards) {
         _validateToken(token);
-        _harvestRewards();
+        harvest();
         rewards = _claimRewards(token, msg.sender);
 
         UserInfo storage user = userInfo[token][msg.sender];
@@ -101,10 +101,24 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
     }
 
     /**
+     * @notice Calls `harvest()` on vault contract and then distributes pending rewards
+     * @dev Rebase rewards from unclaimed rewards are also distributed
+     */
+    function harvest() public override {
+        IPerpetualBondVault(vault).harvest();
+
+        // Accounts for rebase from unclaimed rewards
+        uint256 balance = ERC20(rewardToken).balanceOf(address(this));
+        uint256 rewards = balance + _totalClaimedRewards() - _totalAccRewards() - surplus;
+        _distribute(rewards);
+    }
+
+    /**
      * @notice Calculates `_user` pending rewards
+     * @dev Does not include rewards that have yet to be distributed via `harvest()`
      * @param _token Address of the staked token
      * @param _user Address of the user
-     * @return rewards Amount of pending rewards for `_user`
+     * @return rewards Amount of pending rewards
      */
     function pendingRewards(
         address _token,
@@ -115,72 +129,11 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
     }
 
     /**
-     * @notice Calculates the total amount of rewards accrued
-     * @return totalRewards Total rewards accrued
+     * @notice Distributes rewards to stakers
+     * @param rewards Amount of rewards to distribute
      */
-    function _totalAccRewards() internal view returns (uint256 totalRewards) {
-        totalRewards = poolInfo[yToken].accRewards + poolInfo[lpToken].accRewards;
-    }
-
-    /**
-     * @notice Calculates the total amount of claimed rewards
-     * @return totalClaimed Total rewards claimed
-     */
-    function _totalClaimedRewards() internal view returns (uint256 totalClaimed) {
-        totalClaimed = poolInfo[yToken].claimedRewards + poolInfo[lpToken].claimedRewards;
-    }
-
-    /**
-     * @notice Validates `token` is a supported token
-     * @param token Token to validate
-     */
-    function _validateToken(address token) internal view {
-        require(token != address(0) && (token == yToken || token == lpToken), "!valid");
-    }
-
-    /**
-     * @notice Calls `harvest()` on vault contract
-     */
-    function _harvestRewards() internal {
-        IPerpetualBondVault(vault).harvest();
-    }
-
-    /**
-     * @notice Claims all pending rewards for `user`
-     * @param token Token to claim rewards for
-     * @param user User to claim rewards for
-     * @return rewards Amount of rewards claimed
-     */
-    function _claimRewards(address token, address user) internal returns (uint256 rewards) {
-        if (userInfo[token][user].amount == 0) return 0;
-
-        rewards = pendingRewards(token, user);
-        if (rewards == 0) return 0;
-
-        uint256 balance = ERC20(rewardToken).balanceOf(address(this));
-        // In case of rounding error
-        if (rewards > balance) rewards = balance;
-
-        ERC20(rewardToken).safeTransfer(user, rewards);
-        poolInfo[token].claimedRewards += rewards;
-
-        emit Claim(user, token, rewards);
-    }
-
-    //////////////////////////
-    /* Restricted Functions */
-    //////////////////////////
-
-    /**
-     * @notice Distributes rebase rewards from vault to stakers
-     * @dev Rebase rewards from unclaimed rewards are redistributed
-     */
-    function distribute() external override nonReentrant {
-        require(msg.sender == vault, "!vault");
-
-        // Accounts for rebase from unclaimed rewards
-        uint256 balance = ERC20(rewardToken).balanceOf(address(this));
-        uint256 rewards = balance + _totalClaimedRewards() - _totalAccRewards() - surplus;
+    function _distribute(uint256 rewards) internal {
+        if (rewards == 0) return;
 
         uint256 yTokenStaked = ERC20(yToken).balanceOf(address(this));
         uint256 yTokenSupply = ERC20(yToken).totalSupply();
@@ -215,6 +168,56 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
             }
         }
     }
+
+    /**
+     * @notice Calculates the total amount of rewards accrued
+     * @return totalRewards Total rewards accrued
+     */
+    function _totalAccRewards() internal view returns (uint256 totalRewards) {
+        totalRewards = poolInfo[yToken].accRewards + poolInfo[lpToken].accRewards;
+    }
+
+    /**
+     * @notice Calculates the total amount of claimed rewards
+     * @return totalClaimed Total rewards claimed
+     */
+    function _totalClaimedRewards() internal view returns (uint256 totalClaimed) {
+        totalClaimed = poolInfo[yToken].claimedRewards + poolInfo[lpToken].claimedRewards;
+    }
+
+    /**
+     * @notice Validates `token` is a supported token
+     * @param token Token to validate
+     */
+    function _validateToken(address token) internal view {
+        require(token != address(0) && (token == yToken || token == lpToken), "!valid");
+    }
+
+    /**
+     * @notice Claims all pending rewards for `user`
+     * @param token Token to claim rewards for
+     * @param user User to claim rewards for
+     * @return rewards Amount of rewards claimed
+     */
+    function _claimRewards(address token, address user) internal returns (uint256 rewards) {
+        if (userInfo[token][user].amount == 0) return 0;
+
+        rewards = pendingRewards(token, user);
+        if (rewards == 0) return 0;
+
+        uint256 balance = ERC20(rewardToken).balanceOf(address(this));
+        // In case of rounding error
+        if (rewards > balance) rewards = balance;
+
+        ERC20(rewardToken).safeTransfer(user, rewards);
+        poolInfo[token].claimedRewards += rewards;
+
+        emit Claim(user, token, rewards);
+    }
+
+    //////////////////////////
+    /* Restricted Functions */
+    //////////////////////////
 
     /**
      * @notice Collects surplus yield
