@@ -68,4 +68,6 @@ interface IMasterChef {
     function add(uint256 allocPoint, address token, bool withUpdate) external;
 
     function set(uint256 pid, uint256 allocPoint, bool withUpdate) external;
+
+    function setRewardPerBlock(uint256 rewardPerBlock, bool withUpdate) external;
 }
