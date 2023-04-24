@@ -115,7 +115,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
 
     /**
      * @notice Calculates `_user` pending rewards
-     * @dev Does not include rewards that have yet to be distributed via `harvest()`
+     * @dev Does not include harvested rewards that have not been distributed yet
      * @param _token Address of the staked token
      * @param _user Address of the user
      * @return rewards Amount of pending rewards
