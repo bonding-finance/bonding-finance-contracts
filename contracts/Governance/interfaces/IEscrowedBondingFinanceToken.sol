@@ -6,7 +6,7 @@ pragma solidity ^0.8.0;
  * @author Bonding Finance
  */
 interface IEscrowedBondingFinanceToken {
-    event Claim(address indexed user, uint256 index, uint256 amount);
+    event Claim(address indexed user, uint256 i, uint256 amount);
 
     struct VestingDetails {
         uint256 vestingAmount;
@@ -35,6 +35,10 @@ interface IEscrowedBondingFinanceToken {
     function transferers(address) external view returns (bool);
 
     function vest(uint256 amount) external;
+
+    function claim(uint256 i) external;
+
+    function claimMany(uint256[] calldata indexes) external;
 
     function userInfoLength(address user) external view returns (uint256);
 

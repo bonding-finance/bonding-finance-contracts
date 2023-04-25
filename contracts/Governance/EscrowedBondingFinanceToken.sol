@@ -8,8 +8,6 @@ import "../erc20/ERC20.sol";
 import "../erc20/SafeERC20.sol";
 import "../utils/Owned.sol";
 
-import "hardhat/console.sol";
-
 /**
  * @title Escrowed Bonding Finance DAO Token
  * @author Bonding Finance
@@ -24,8 +22,6 @@ contract EscrowedBondingFinanceToken is IEscrowedBondingFinanceToken, ERC20, Own
     mapping(address => VestingDetails[]) public override userInfo;
 
     constructor() ERC20("Escrowed Bonding Finance Token", "esBND", 18) {
-        transferers[address(this)] = true;
-
         _mint(msg.sender, 1_000_000 ether);
         transferers[msg.sender] = true;
 
@@ -36,13 +32,11 @@ contract EscrowedBondingFinanceToken is IEscrowedBondingFinanceToken, ERC20, Own
 
     /**
      * @notice Vests `amount` of esBND linearly over vesting period
-     * @dev Also claims unlocked BND
      * @param amount Amount of esBND to vest
      */
     function vest(uint256 amount) external override {
-        _claim(msg.sender);
+        require(amount != 0, "amount is 0");
 
-        if (amount == 0) return;
         _burn(msg.sender, amount);
 
         userInfo[msg.sender].push(
@@ -53,6 +47,29 @@ contract EscrowedBondingFinanceToken is IEscrowedBondingFinanceToken, ERC20, Own
                 lastVestingTime: block.timestamp
             })
         );
+    }
+
+    /**
+     * @notice Claims unlocked BND
+     * @param index Index of vests to claim
+     */
+    function claim(uint256 index) external override {
+        _claim(msg.sender, index);
+    }
+
+    /**
+     * @notice Claims unlocked BND from multiple vests
+     * @param indexes Indexes of vests to claim
+     */
+    function claimMany(uint256[] calldata indexes) external override {
+        uint256 length = indexes.length;
+        for (uint256 i; i < length; ) {
+            _claim(msg.sender, indexes[i]);
+
+            unchecked {
+                ++i;
+            }
+        }
     }
 
     /**
@@ -90,23 +107,22 @@ contract EscrowedBondingFinanceToken is IEscrowedBondingFinanceToken, ERC20, Own
     }
 
     /**
-     * @notice Claims and sends BND to `user`
+     * @notice Claims unlocked BND and sends to `user`
      * @param user User to claim for
+     * @param i Index of vesting details
      */
-    function _claim(address user) internal {
-        uint256 length = userInfoLength(user);
-        for (uint256 i = 0; i < length; ) {
-            _updateVesting(user, i);
-            uint256 amount = claimable(user, i);
-            userInfo[user][i].claimedAmount += amount;
-            ERC20(bnd).transfer(user, amount);
+    function _claim(address user, uint256 i) internal {
+        require(i < userInfoLength(msg.sender), "!valid");
 
-            emit Claim(user, i, amount);
+        _updateVesting(user, i);
 
-            unchecked {
-                ++i;
-            }
-        }
+        uint256 amount = claimable(user, i);
+        if (amount == 0) return;
+
+        userInfo[user][i].claimedAmount += amount;
+        ERC20(bnd).transfer(user, amount);
+
+        emit Claim(user, i, amount);
     }
 
     /**
