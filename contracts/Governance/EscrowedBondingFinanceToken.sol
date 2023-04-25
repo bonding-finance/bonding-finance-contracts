@@ -138,6 +138,10 @@ contract EscrowedBondingFinanceToken is IEscrowedBondingFinanceToken, ERC20, Own
 
     /**
      * @notice Calculates amount of unlocked BND for `user` per vesting schedule
+     * @param vestingAmount Amount being vested
+     * @param cumulativeClaimAmount Total accumulated claim amount
+     * @param claimedAmount Amount claimed
+     * @param lastVestingTime Last vest timestamp
      * @return amount Amount of claimable BND
      */
     function _claimable(
@@ -158,6 +162,9 @@ contract EscrowedBondingFinanceToken is IEscrowedBondingFinanceToken, ERC20, Own
 
     /**
      * @notice Calculates amount claimable since last claim
+     * @param vestingAmount Amount being vested
+     * @param cumulativeClaimAmount Total accumulated claim amount
+     * @param lastVestingTime Last vest timestamp
      * @return claimableAmount Amount of BND claimable since last claim
      */
     function _getNextClaimableAmount(
