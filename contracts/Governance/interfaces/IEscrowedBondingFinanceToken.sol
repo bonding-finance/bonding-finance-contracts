@@ -36,13 +36,13 @@ interface IEscrowedBondingFinanceToken {
 
     function vest(uint256 amount) external;
 
-    function claim(uint256 i) external;
+    function claim(uint256 index) external;
 
     function claimMany(uint256[] calldata indexes) external;
 
     function userInfoLength(address user) external view returns (uint256);
 
-    function claimable(address user, uint256 i) external view returns (uint256 amount);
+    function claimable(address user, uint256 index) external view returns (uint256 amount);
 
     function setTransferer(address transferer, bool allowed) external;
 }

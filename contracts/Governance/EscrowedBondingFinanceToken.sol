@@ -51,7 +51,7 @@ contract EscrowedBondingFinanceToken is IEscrowedBondingFinanceToken, ERC20, Own
 
     /**
      * @notice Claims unlocked BND
-     * @param index Index of vests to claim
+     * @param index Index of vests
      */
     function claim(uint256 index) external override {
         _claim(msg.sender, index);
@@ -59,7 +59,7 @@ contract EscrowedBondingFinanceToken is IEscrowedBondingFinanceToken, ERC20, Own
 
     /**
      * @notice Claims unlocked BND from multiple vests
-     * @param indexes Indexes of vests to claim
+     * @param indexes Indexes of vests
      */
     function claimMany(uint256[] calldata indexes) external override {
         uint256 length = indexes.length;
@@ -73,31 +73,15 @@ contract EscrowedBondingFinanceToken is IEscrowedBondingFinanceToken, ERC20, Own
     }
 
     /**
-     * @notice Calculates total amount of unlocked BND for `user`
-     * @param user User to check claimable amount
-     * @return amount Amount of total claimable BND
-     */
-    function totalClaimable(address user) external view returns (uint256 amount) {
-        uint256 length = userInfoLength(user);
-        for (uint256 i = 0; i < length; ) {
-            amount += claimable(user, i);
-
-            unchecked {
-                ++i;
-            }
-        }
-    }
-
-    /**
      * @notice Calculates amount of unlocked BND for `user` per vesting schedule
      * @param user User to check claimable amount
-     * @param i Index of vesting details
+     * @param index Index of vests
      * @return amount Amount of claimable BND
      */
-    function claimable(address user, uint256 i) public view override returns (uint256 amount) {
-        VestingDetails memory info = userInfo[user][i];
+    function claimable(address user, uint256 index) public view override returns (uint256 amount) {
+        VestingDetails memory info = userInfo[user][index];
         uint256 currentClaimable = info.cumulativeClaimAmount - info.claimedAmount;
-        uint256 nextClaimable = _getNextClaimableAmount(user, i);
+        uint256 nextClaimable = _getNextClaimableAmount(user, index);
 
         amount = currentClaimable + nextClaimable;
     }

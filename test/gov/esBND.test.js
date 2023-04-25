@@ -144,7 +144,6 @@ describe("esBND", function () {
             await time.increase(HALF_YEAR);
             expect(await esBND.claimable(owner.address, 0)).to.equal(100);
             expect(await esBND.claimable(owner.address, 1)).to.equal(50);
-            expect(await esBND.totalClaimable(owner.address)).to.equal(150);
         });
     });
 
@@ -176,11 +175,9 @@ describe("esBND", function () {
                 await esBND.vest(100);
                 const HALF_YEAR = (365 * 24 * 60 * 60) / 2;
                 await time.increase(HALF_YEAR);
-                expect(await esBND.totalClaimable(owner.address)).to.equal(50);
                 expect(await esBND.claimable(owner.address, 0)).to.equal(50);
                 await esBND.vest(200);
                 await time.increase(HALF_YEAR);
-                expect(await esBND.totalClaimable(owner.address)).to.equal(200);
                 expect(await esBND.claimable(owner.address, 0)).to.equal(100);
                 expect(await esBND.claimable(owner.address, 1)).to.equal(100);
                 await esBND.claimMany([0, 1]);
