@@ -185,7 +185,7 @@ describe("esBND", function () {
                 await time.increase(HALF_YEAR);
                 expect(await esBND.claimable(owner.address, 0)).to.equal(0);
                 expect(await esBND.claimable(owner.address, 1)).to.equal(100);
-                await esBND.claim(1);
+                await esBND.claim([0,1]);
                 expect(await bnd.balanceOf(owner.address)).to.equal(300);
             });
         });
