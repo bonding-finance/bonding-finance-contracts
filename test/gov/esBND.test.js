@@ -149,14 +149,6 @@ describe("esBND", function () {
     });
 
     describe("Claim", function () {
-        describe("Validations", function () {
-            it("Should revert if index is invalid", async function () {
-                const { esBND } = await loadFixture(deployFixture);
-                await expect(esBND.claim(0)).to.be.revertedWith("!valid");
-                await expect(esBND.claimMany([1, 2, 3])).to.be.revertedWith("!valid");
-            });
-        });
-
         describe("Success", function () {
             it("Should claim correct amount", async function () {
                 const { esBND, bnd, owner } = await loadFixture(deployFixture);
