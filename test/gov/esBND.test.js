@@ -22,7 +22,7 @@ describe("esBND", function () {
             const { esBND, bnd, vestingDuration, owner } = await loadFixture(deployFixture);
             expect(await esBND.owner()).to.equal(owner.address);
             expect(await esBND.vestingDuration()).to.equal(vestingDuration);
-            expect(await esBND.transferers(owner.address)).to.equal(true)
+            expect(await esBND.transferers(owner.address)).to.equal(true);
             expect(await esBND.bnd()).to.not.equal(constants.AddressZero);
             expect(await esBND.balanceOf(owner.address)).to.equal(numToBN(1_000_000));
             expect(await bnd.balanceOf(esBND.address)).to.equal(numToBN(1_000_000));
@@ -88,30 +88,54 @@ describe("esBND", function () {
         it("Should vest", async function () {
             const { esBND, owner } = await loadFixture(deployFixture);
             await esBND.vest(100);
-            const vestingInfo = await esBND.vestingInfo(owner.address);
+            let vestingInfo = await esBND.userInfo(owner.address, 0);
+            expect(await esBND.userInfoLength(owner.address)).to.equal(1);
             expect(vestingInfo.lastVestingTime).to.equal(await time.latest());
             expect(vestingInfo.cumulativeClaimAmount).to.equal(0);
             expect(vestingInfo.claimedAmount).to.equal(0);
             expect(vestingInfo.vestingAmount).to.equal(100);
+
+            await esBND.vest(200);
+            vestingInfo = await esBND.userInfo(owner.address, 1);
+            expect(await esBND.userInfoLength(owner.address)).to.equal(2);
+            expect(vestingInfo.lastVestingTime).to.equal(await time.latest());
+            expect(vestingInfo.cumulativeClaimAmount).to.equal(0);
+            expect(vestingInfo.claimedAmount).to.equal(0);
+            expect(vestingInfo.vestingAmount).to.equal(200);
         });
     });
 
     describe("Claimable", function () {
-        it("Should be correct claimable amount", async function () {
+        it("Should be correct total claimable amount", async function () {
             const { esBND, owner } = await loadFixture(deployFixture);
             await esBND.vest(100);
-            expect(await esBND.claimable(owner.address)).to.equal(0);
+            expect(await esBND.claimable(owner.address, 0)).to.equal(0);
             const ONE_QUARTER_YEAR = (365 * 24 * 60 * 60) / 4;
             await time.increase(ONE_QUARTER_YEAR);
-            expect(await esBND.claimable(owner.address)).to.equal(25);
+            expect(await esBND.claimable(owner.address, 0)).to.equal(25);
             await time.increase(ONE_QUARTER_YEAR);
-            expect(await esBND.claimable(owner.address)).to.equal(50);
+            expect(await esBND.claimable(owner.address, 0)).to.equal(50);
             await time.increase(ONE_QUARTER_YEAR);
-            expect(await esBND.claimable(owner.address)).to.equal(75);
+            expect(await esBND.claimable(owner.address, 0)).to.equal(75);
             await time.increase(ONE_QUARTER_YEAR);
-            expect(await esBND.claimable(owner.address)).to.equal(100);
+            expect(await esBND.claimable(owner.address, 0)).to.equal(100);
             await time.increase(ONE_QUARTER_YEAR);
-            expect(await esBND.claimable(owner.address)).to.equal(100);
+            expect(await esBND.claimable(owner.address, 0)).to.equal(100);
+            await esBND.vest(0);
+            expect(await esBND.claimable(owner.address, 0)).to.equal(0);
+        });
+
+        it("Should be correct claimable amount w/ multiple", async function () {
+            const { esBND, owner } = await loadFixture(deployFixture);
+            await esBND.vest(100);
+            const HALF_YEAR = (365 * 24 * 60 * 60) / 2;
+            await time.increase(HALF_YEAR);
+            expect(await esBND.claimable(owner.address, 0)).to.equal(50);
+            await esBND.vest(100);
+            await time.increase(HALF_YEAR);
+            expect(await esBND.claimable(owner.address, 0)).to.equal(50);
+            expect(await esBND.claimable(owner.address, 1)).to.equal(50);
+            expect(await esBND.totalClaimable(owner.address)).to.equal(100);
         });
     });
 
@@ -132,6 +156,38 @@ describe("esBND", function () {
             await time.increase(ONE_QUARTER_YEAR);
             await esBND.vest(0);
             expect(await bnd.balanceOf(owner.address)).to.equal(100);
+            await time.increase(ONE_QUARTER_YEAR);
+            await esBND.vest(0);
+            expect(await bnd.balanceOf(owner.address)).to.equal(100);
+        });
+    });
+
+    describe("Test all actions", function () {
+        it("Should be correct", async function () {
+            const { esBND, bnd, owner } = await loadFixture(deployFixture);
+            await esBND.vest(100);
+            const HALF_YEAR = (365 * 24 * 60 * 60) / 2;
+            await time.increase(HALF_YEAR);
+            expect(await esBND.totalClaimable(owner.address)).to.equal(50);
+            expect(await esBND.claimable(owner.address, 0)).to.equal(50);
+            await esBND.vest(200);
+            expect(await bnd.balanceOf(owner.address)).to.equal(50);
+            await time.increase(HALF_YEAR);
+            expect(await esBND.totalClaimable(owner.address)).to.equal(150);
+            expect(await esBND.claimable(owner.address, 0)).to.equal(50);
+            expect(await esBND.claimable(owner.address, 1)).to.equal(100);
+            await esBND.vest(0);
+            expect(await bnd.balanceOf(owner.address)).to.equal(200);
+            await time.increase(HALF_YEAR);
+            expect(await esBND.claimable(owner.address, 0)).to.equal(0);
+            expect(await esBND.claimable(owner.address, 1)).to.equal(100);
+            await esBND.vest(0);
+            expect(await bnd.balanceOf(owner.address)).to.equal(300);
+            for (let i =0; i < 100; i++) {
+                console.log(i);
+                await esBND.vest(1);
+            }
+
         });
     });
 });

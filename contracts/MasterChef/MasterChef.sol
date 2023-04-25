@@ -146,11 +146,14 @@ contract MasterChef is IMasterChef, Owned, ReentrancyGuard {
         poolInfo[_pid].allocPoint = _allocPoint;
     }
 
-    function setRewardPerBlock(uint256 _rewardPerBlock, bool _withUpdate) external override onlyOwner {
+    function setRewardPerBlock(
+        uint256 _rewardPerBlock,
+        bool _withUpdate
+    ) external override onlyOwner {
         if (_withUpdate) {
             massUpdatePools();
         }
-        
+
         rewardPerBlock = _rewardPerBlock;
     }
 
