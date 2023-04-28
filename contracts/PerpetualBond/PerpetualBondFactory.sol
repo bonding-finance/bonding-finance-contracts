@@ -65,9 +65,15 @@ contract PerpetualBondFactory is IPerpetualBondFactory, PerpetualBondDeployer, O
         feeInfo.feeTo = feeTo;
     }
 
-    function setFee(uint256 fee) external override onlyOwner {
-        require(fee <= 100, "Fee > 100");
+    function setVaultFee(uint256 vaultFee) external override onlyOwner {
+        require(vaultFee <= 100, "Fee > 100");
 
-        feeInfo.fee = fee;
+        feeInfo.vaultFee = vaultFee;
+    }
+
+    function setSurplusFee(uint256 surplusFee) external override onlyOwner {
+        require(surplusFee <= 10000, "Fee > 10000");
+
+        feeInfo.surplusFee = surplusFee;
     }
 }

@@ -125,12 +125,12 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
     }
 
     /**
-     * @notice Applies fee (if any) to `amount`
+     * @notice Applies vault fee (if any) to `amount`
      * @param amount The original amount
      * @return feeAmount The fee amount charged
      */
     function _chargeFee(uint256 amount) internal returns (uint256 feeAmount) {
-        (, uint256 fee) = IPerpetualBondFactory(factory).feeInfo();
+        (, uint256 fee, ) = IPerpetualBondFactory(factory).feeInfo();
         if (fee == 0) return 0;
 
         feeAmount = (amount * fee) / 10000;

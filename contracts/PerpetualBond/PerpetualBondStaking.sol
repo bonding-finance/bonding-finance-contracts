@@ -175,21 +175,18 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
             emit Distribute(yToken, block.timestamp, yTokenRewards, yTokenStaked);
         }
 
+        // Distribute excess rewards to LP token stakers and protocol
         if (miscRewards != 0) {
-            // If `lpToken` is not set or there are none staked, all excess rewards go to the protocol
-            // Otherwise, all excess rewards go to LP token stakers
-            if (lpToken == address(0) || ERC20(lpToken).balanceOf(address(this)) == 0) {
-                surplus += miscRewards;
+            uint256 feeAmount = _chargeFee(miscRewards);
+            uint256 lpRewards = miscRewards - feeAmount;
+            if (lpRewards == 0) return;
 
-                emit Distribute(factory, block.timestamp, miscRewards, 0);
-            } else {
-                uint256 lpStaked = ERC20(lpToken).balanceOf(address(this));
-                PoolInfo storage lpTokenPool = poolInfo[lpToken];
-                lpTokenPool.accRewardsPerShare += (miscRewards * 1e18) / lpStaked;
-                lpTokenPool.accRewards += miscRewards;
+            uint256 lpStaked = ERC20(lpToken).balanceOf(address(this));
+            PoolInfo storage lpTokenPool = poolInfo[lpToken];
+            lpTokenPool.accRewardsPerShare += (lpRewards * 1e18) / lpStaked;
+            lpTokenPool.accRewards += lpRewards;
 
-                emit Distribute(lpToken, block.timestamp, miscRewards, lpStaked);
-            }
+            emit Distribute(lpToken, block.timestamp, lpRewards, lpStaked);
         }
     }
 
@@ -215,6 +212,27 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
      */
     function _validateToken(address token) internal view {
         require(token != address(0) && (token == yToken || token == lpToken), "!valid");
+    }
+
+    /**
+     * @notice Applies surplus fee (if any) to `amount`
+     * @dev If LP token or staked amount is 0, all excess is distributed to the protocol
+     * @param amount The original amount
+     * @return feeAmount The fee amount charged
+     */
+    function _chargeFee(uint256 amount) internal returns (uint256 feeAmount) {
+        if (lpToken == address(0) || ERC20(lpToken).balanceOf(address(this)) == 0) {
+            feeAmount = amount;
+        } else {
+            (, , uint256 fee) = IPerpetualBondFactory(factory).feeInfo();
+            if (fee == 0) return 0;
+
+            feeAmount = (amount * fee) / 10000;
+        }
+
+        surplus += feeAmount;
+
+        emit Distribute(factory, block.timestamp, feeAmount, 0);
     }
 
     //////////////////////////

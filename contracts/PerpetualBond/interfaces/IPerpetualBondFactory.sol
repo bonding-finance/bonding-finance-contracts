@@ -10,10 +10,11 @@ interface IPerpetualBondFactory {
 
     struct FeeInfo {
         address feeTo;
-        uint256 fee;
+        uint256 vaultFee;
+        uint256 surplusFee;
     }
 
-    function feeInfo() external view returns (address feeTo, uint256 fee);
+    function feeInfo() external view returns (address feeTo, uint256 vaultFee, uint256 surplusFee);
 
     function allVaults(uint256) external view returns (address);
 
@@ -35,5 +36,7 @@ interface IPerpetualBondFactory {
 
     function setFeeTo(address feeTo) external;
 
-    function setFee(uint256 fee) external;
+    function setVaultFee(uint256 vaultFee) external;
+
+    function setSurplusFee(uint256 surplusFee) external;
 }

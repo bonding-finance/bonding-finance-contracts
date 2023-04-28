@@ -302,6 +302,26 @@ describe("Perpetual bond staking", function () {
                 );
                 expect(await staking.surplus()).to.equal(0);
             });
+
+            it("Should distribute only to bond stakers and lp stakers w/ protocol fee", async function () {
+                const { owner, factory, stETH, vault, yToken, lpToken, staking } =
+                    await createVault();
+                await factory.setSurplusFee(5000);
+                await factory.setStaking(vault.address, staking.address);
+                await vault.deposit(numToBN(10));
+                await staking.stake(yToken.address, numToBN(8));
+                await staking.stake(lpToken.address, numToBN(2));
+
+                await stETH.mint(vault.address, numToBN(1));
+                await staking.harvest();
+                expect(await staking.pendingRewards(yToken.address, owner.address)).to.equal(
+                    numToBN(0.8)
+                );
+                expect(await staking.surplus()).to.equal(numToBN(0.1));
+                expect(await staking.pendingRewards(lpToken.address, owner.address)).to.equal(
+                    numToBN(0.1)
+                );
+            });
         });
 
         describe("Events", function () {
