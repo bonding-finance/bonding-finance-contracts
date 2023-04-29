@@ -45,7 +45,8 @@ contract MasterChef is IMasterChef, Owned, ReentrancyGuard {
         uint256 accRewardsPerShare = pool.accRewardsPerShare;
         uint256 stakedSupply = ERC20(pool.token).balanceOf(address(this));
         if (block.number > pool.lastRewardBlock && stakedSupply != 0) {
-            uint256 reward = (rewardPerBlock * pool.allocPoint) / totalAllocPoint;
+            uint256 elapsedBlocks = block.number - pool.lastRewardBlock;
+            uint256 reward = (elapsedBlocks * rewardPerBlock * pool.allocPoint) / totalAllocPoint;
             accRewardsPerShare += (reward * 1e18) / stakedSupply;
         }
 
@@ -107,7 +108,8 @@ contract MasterChef is IMasterChef, Owned, ReentrancyGuard {
             pool.lastRewardBlock = block.number;
             return;
         }
-        uint256 reward = (rewardPerBlock * pool.allocPoint) / totalAllocPoint;
+        uint256 elapsedBlocks = block.number - pool.lastRewardBlock;
+        uint256 reward = (elapsedBlocks * rewardPerBlock * pool.allocPoint) / totalAllocPoint;
         pool.accRewardsPerShare += (reward * 1e18) / stakedSupply;
         pool.lastRewardBlock = block.number;
     }
