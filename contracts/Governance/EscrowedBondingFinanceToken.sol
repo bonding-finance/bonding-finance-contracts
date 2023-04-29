@@ -98,7 +98,7 @@ contract EscrowedBondingFinanceToken is IEscrowedBondingFinanceToken, ERC20, Own
      * @param i Index of vesting details
      */
     function _claim(address user, uint256 i) internal {
-        if (i >= userInfoLength(user)) return;
+        require(i < userInfoLength(user), "!valid");
 
         VestingDetails storage vestingDetails = userInfo[user][i];
 
