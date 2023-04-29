@@ -170,7 +170,7 @@ describe("Perpetual bond vault", function () {
             await vault.deposit(numToBN(10));
             await stETH.mint(vault.address, numToBN(1));
             expect(await vault.pendingRewards()).to.equal(numToBN(1));
-            await factory.collectFees(vault.address);
+            await factory.collectVaultFees(vault.address);
             expect(await vault.pendingRewards()).to.equal(numToBN(1));
         });
     });
@@ -254,13 +254,13 @@ describe("Perpetual bond vault", function () {
             it("Should revert if feeTo is 0", async function () {
                 const { factory, stETH, vault } = await createVault();
                 await stETH.mint(vault.address, numToBN(1));
-                await expect(factory.collectFees(vault.address)).to.be.revertedWith("feeTo is 0");
+                await expect(factory.collectVaultFees(vault.address)).to.be.revertedWith("feeTo is 0");
             });
 
             it("Should return early if fees is 0", async function () {
                 const { feeTo, factory, vault } = await createVault();
                 await factory.setFeeTo(feeTo.address);
-                await expect(factory.collectFees(vault.address)).to.not.emit(vault, "CollectFees");
+                await expect(factory.collectVaultFees(vault.address)).to.not.emit(vault, "CollectFees");
             });
         });
 
@@ -270,7 +270,7 @@ describe("Perpetual bond vault", function () {
                 await factory.setFeeTo(feeTo.address);
                 await factory.setVaultFee(100);
                 await vault.deposit(numToBN(10));
-                await factory.collectFees(vault.address);
+                await factory.collectVaultFees(vault.address);
                 expect(await stETH.balanceOf(feeTo.address)).to.equal(numToBN(0.1));
                 expect(await vault.fees()).to.equal(0);
             });
@@ -282,7 +282,7 @@ describe("Perpetual bond vault", function () {
                 await factory.setFeeTo(feeTo.address);
                 await factory.setVaultFee(100);
                 await vault.deposit(numToBN(10));
-                await expect(factory.collectFees(vault.address))
+                await expect(factory.collectVaultFees(vault.address))
                     .to.emit(vault, "CollectFees")
                     .withArgs(feeTo.address, numToBN(0.1));
             });

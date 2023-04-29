@@ -30,9 +30,9 @@ interface IPerpetualBondFactory {
 
     function setStaking(address vault, address staking) external;
 
-    function collectFees(address vault) external;
+    function collectVaultFees(address vault) external;
 
-    function collectSurplus(address staking) external;
+    function collectSurplusFees(address staking) external;
 
     function setFeeTo(address feeTo) external;
 

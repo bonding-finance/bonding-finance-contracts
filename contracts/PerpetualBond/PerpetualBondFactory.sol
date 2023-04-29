@@ -47,18 +47,18 @@ contract PerpetualBondFactory is IPerpetualBondFactory, PerpetualBondDeployer, O
         IPerpetualBondVault(vault).setStaking(staking);
     }
 
-    function collectFees(address vault) external override onlyOwner {
+    function collectVaultFees(address vault) external override onlyOwner {
         require(vault != address(0));
         require(feeInfo.feeTo != address(0), "feeTo is 0");
 
         IPerpetualBondVault(vault).collectFees(feeInfo.feeTo);
     }
 
-    function collectSurplus(address staking) external override onlyOwner {
+    function collectSurplusFees(address staking) external override onlyOwner {
         require(staking != address(0));
         require(feeInfo.feeTo != address(0), "feeTo is 0");
 
-        IPerpetualBondStaking(staking).collectSurplus(feeInfo.feeTo);
+        IPerpetualBondStaking(staking).collectFees(feeInfo.feeTo);
     }
 
     function setFeeTo(address feeTo) external override onlyOwner {

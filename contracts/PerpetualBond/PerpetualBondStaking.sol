@@ -20,7 +20,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
     address public immutable override yToken;
     address public immutable override lpToken;
     address public immutable override rewardToken;
-    uint256 public override surplus;
+    uint256 public override fees;
 
     mapping(address => mapping(address => UserInfo)) public override userInfo;
     mapping(address => PoolInfo) public override poolInfo;
@@ -111,7 +111,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
 
         // Accounts for rebase from unclaimed rewards
         uint256 balance = ERC20(rewardToken).balanceOf(address(this));
-        uint256 rewards = balance + _totalClaimedRewards() - _totalAccRewards() - surplus;
+        uint256 rewards = balance + _totalClaimedRewards() - _totalAccRewards() - fees;
         _distribute(rewards);
     }
 
@@ -230,7 +230,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
             feeAmount = (amount * fee) / 10000;
         }
 
-        surplus += feeAmount;
+        fees += feeAmount;
 
         emit Distribute(factory, block.timestamp, feeAmount, 0);
     }
@@ -243,15 +243,15 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
      * @notice Collects surplus yield
      * @param feeTo Address to send surplus to
      */
-    function collectSurplus(address feeTo) external override {
+    function collectFees(address feeTo) external override {
         require(msg.sender == factory, "!factory");
 
-        if (surplus == 0) return;
+        if (fees == 0) return;
 
-        ERC20(rewardToken).safeTransfer(feeTo, surplus);
+        ERC20(rewardToken).safeTransfer(feeTo, fees);
 
-        emit CollectSurplus(feeTo, surplus);
+        emit CollectSurplus(feeTo, fees);
 
-        delete surplus;
+        delete fees;
     }
 }

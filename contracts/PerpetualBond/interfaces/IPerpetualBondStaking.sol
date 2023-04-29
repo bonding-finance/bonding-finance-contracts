@@ -39,7 +39,7 @@ interface IPerpetualBondStaking {
 
     function rewardToken() external view returns (address);
 
-    function surplus() external view returns (uint256);
+    function fees() external view returns (uint256);
 
     function userInfo(
         address token,
@@ -67,5 +67,5 @@ interface IPerpetualBondStaking {
     /* Restricted Functions */
     //////////////////////////
 
-    function collectSurplus(address feeTo) external;
+    function collectFees(address feeTo) external;
 }
