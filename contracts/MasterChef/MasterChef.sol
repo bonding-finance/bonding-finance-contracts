@@ -121,6 +121,8 @@ contract MasterChef is IMasterChef, Owned, ReentrancyGuard {
         address _token,
         bool _withUpdate
     ) external override onlyOwner {
+        _checkPoolDuplicate(_token);
+
         if (_withUpdate) {
             massUpdatePools();
         }
@@ -162,5 +164,16 @@ contract MasterChef is IMasterChef, Owned, ReentrancyGuard {
         if (amount > balance) amount = balance;
 
         ERC20(esBND).transfer(to, amount);
+    }
+
+    function _checkPoolDuplicate(address token) internal view {
+        uint256 length = poolInfo.length;
+        for (uint256 i = 0; i < length; ) {
+            require(poolInfo[i].token != token, "!valid");
+
+            unchecked {
+                ++i;
+            }
+        }
     }
 }
