@@ -54,7 +54,7 @@ contract MasterChef is IMasterChef, Owned, ReentrancyGuard {
         rewards = ((user.amount * accRewardsPerShare) / 1e18) - user.rewardDebt;
     }
 
-    function deposit(uint256 _pid, uint256 _amount) external override {
+    function deposit(uint256 _pid, uint256 _amount) external override nonReentrant {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
 
@@ -70,7 +70,7 @@ contract MasterChef is IMasterChef, Owned, ReentrancyGuard {
         emit Deposit(msg.sender, _pid, _amount);
     }
 
-    function withdraw(uint256 _pid, uint256 _amount) external override {
+    function withdraw(uint256 _pid, uint256 _amount) external override nonReentrant {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
 
@@ -85,7 +85,7 @@ contract MasterChef is IMasterChef, Owned, ReentrancyGuard {
         emit Withdraw(msg.sender, _pid, _amount);
     }
 
-    function emergencyWithdraw(uint256 _pid) external override {
+    function emergencyWithdraw(uint256 _pid) external override nonReentrant {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
 
