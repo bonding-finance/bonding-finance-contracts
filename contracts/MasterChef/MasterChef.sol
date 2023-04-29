@@ -42,6 +42,7 @@ contract MasterChef is IMasterChef, Owned, ReentrancyGuard {
     ) external view override returns (uint256 rewards) {
         PoolInfo memory pool = poolInfo[_pid];
         UserInfo memory user = userInfo[_pid][_user];
+
         uint256 accRewardsPerShare = pool.accRewardsPerShare;
         uint256 stakedSupply = ERC20(pool.token).balanceOf(address(this));
         if (block.number > pool.lastRewardBlock && stakedSupply != 0) {
@@ -56,6 +57,7 @@ contract MasterChef is IMasterChef, Owned, ReentrancyGuard {
     function deposit(uint256 _pid, uint256 _amount) external override {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
+
         updatePool(_pid);
         if (user.amount > 0) {
             uint256 pending = ((user.amount * pool.accRewardsPerShare) / 1e18) - user.rewardDebt;
@@ -71,6 +73,7 @@ contract MasterChef is IMasterChef, Owned, ReentrancyGuard {
     function withdraw(uint256 _pid, uint256 _amount) external override {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
+
         updatePool(_pid);
         uint256 pending = ((user.amount * pool.accRewardsPerShare) / 1e18) - user.rewardDebt;
         _transferRewards(msg.sender, pending);
@@ -85,10 +88,13 @@ contract MasterChef is IMasterChef, Owned, ReentrancyGuard {
     function emergencyWithdraw(uint256 _pid) external override {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        ERC20(pool.token).safeTransfer(msg.sender, user.amount);
-        emit EmergencyWithdraw(msg.sender, _pid, user.amount);
+
+        uint256 amount = user.amount;
         user.amount = 0;
         user.rewardDebt = 0;
+        ERC20(pool.token).safeTransfer(msg.sender, amount);
+
+        emit EmergencyWithdraw(msg.sender, _pid, amount);
     }
 
     function massUpdatePools() public override {
@@ -100,14 +106,15 @@ contract MasterChef is IMasterChef, Owned, ReentrancyGuard {
 
     function updatePool(uint256 _pid) public override {
         PoolInfo storage pool = poolInfo[_pid];
-        if (block.number <= pool.lastRewardBlock) {
-            return;
-        }
+
+        if (block.number <= pool.lastRewardBlock) return;
+
         uint256 stakedSupply = ERC20(pool.token).balanceOf(address(this));
         if (stakedSupply == 0) {
             pool.lastRewardBlock = block.number;
             return;
         }
+
         uint256 elapsedBlocks = block.number - pool.lastRewardBlock;
         uint256 reward = (elapsedBlocks * rewardPerBlock * pool.allocPoint) / totalAllocPoint;
         pool.accRewardsPerShare += (reward * 1e18) / stakedSupply;

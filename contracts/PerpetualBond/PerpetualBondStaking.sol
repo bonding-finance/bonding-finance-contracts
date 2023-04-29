@@ -91,11 +91,11 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
      */
     function emergencyWithdraw(address token) external override nonReentrant {
         UserInfo storage user = userInfo[token][msg.sender];
-        uint256 amount = user.amount;
-        ERC20(token).safeTransfer(msg.sender, amount);
 
+        uint256 amount = user.amount;
         user.amount = 0;
         user.rewardDebt = 0;
+        ERC20(token).safeTransfer(msg.sender, amount);
 
         emit EmergencyWithdraw(msg.sender, token, amount);
     }
