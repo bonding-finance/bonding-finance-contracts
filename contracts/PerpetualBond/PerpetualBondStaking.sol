@@ -20,7 +20,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
     address public immutable override yToken;
     address public immutable override lpToken;
     address public immutable override rewardToken;
-    uint256 public override surplus;
+    uint256 public override fees;
 
     mapping(address => mapping(address => UserInfo)) public override userInfo;
     mapping(address => PoolInfo) public override poolInfo;
@@ -111,7 +111,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
 
         // Accounts for rebase from unclaimed rewards
         uint256 balance = ERC20(rewardToken).balanceOf(address(this));
-        uint256 rewards = balance + _totalClaimedRewards() - _totalAccRewards() - surplus;
+        uint256 rewards = balance + _totalClaimedRewards() - _totalAccRewards() - fees;
         _distribute(rewards);
     }
 
@@ -175,21 +175,18 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
             emit Distribute(yToken, block.timestamp, yTokenRewards, yTokenStaked);
         }
 
+        // Distribute excess rewards to LP token stakers and protocol
         if (miscRewards != 0) {
-            // If `lpToken` is not set or there are none staked, all excess rewards go to the protocol
-            // Otherwise, all excess rewards go to LP token stakers
-            if (lpToken == address(0) || ERC20(lpToken).balanceOf(address(this)) == 0) {
-                surplus += miscRewards;
+            uint256 feeAmount = _chargeFee(miscRewards);
+            uint256 lpRewards = miscRewards - feeAmount;
+            if (lpRewards == 0) return;
 
-                emit Distribute(factory, block.timestamp, miscRewards, 0);
-            } else {
-                uint256 lpStaked = ERC20(lpToken).balanceOf(address(this));
-                PoolInfo storage lpTokenPool = poolInfo[lpToken];
-                lpTokenPool.accRewardsPerShare += (miscRewards * 1e18) / lpStaked;
-                lpTokenPool.accRewards += miscRewards;
+            uint256 lpStaked = ERC20(lpToken).balanceOf(address(this));
+            PoolInfo storage lpTokenPool = poolInfo[lpToken];
+            lpTokenPool.accRewardsPerShare += (lpRewards * 1e18) / lpStaked;
+            lpTokenPool.accRewards += lpRewards;
 
-                emit Distribute(lpToken, block.timestamp, miscRewards, lpStaked);
-            }
+            emit Distribute(lpToken, block.timestamp, lpRewards, lpStaked);
         }
     }
 
@@ -217,23 +214,40 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
         require(token != address(0) && (token == yToken || token == lpToken), "!valid");
     }
 
+    /**
+     * @notice Applies surplus fee (if any) to `amount`
+     * @dev If LP token or staked amount is 0, all excess is distributed to the protocol
+     * @param amount The original amount
+     * @return feeAmount The fee amount charged
+     */
+    function _chargeFee(uint256 amount) internal returns (uint256 feeAmount) {
+        if (lpToken == address(0) || ERC20(lpToken).balanceOf(address(this)) == 0) {
+            feeAmount = amount;
+        } else {
+            (, , uint256 fee) = IPerpetualBondFactory(factory).feeInfo();
+            if (fee == 0) return 0;
+
+            feeAmount = (amount * fee) / 10000;
+        }
+
+        fees += feeAmount;
+
+        emit Distribute(factory, block.timestamp, feeAmount, 0);
+    }
+
     //////////////////////////
     /* Restricted Functions */
     //////////////////////////
 
-    /**
-     * @notice Collects surplus yield
-     * @param feeTo Address to send surplus to
-     */
-    function collectSurplus(address feeTo) external override {
+    function collectFees(address feeTo) external override {
         require(msg.sender == factory, "!factory");
 
-        if (surplus == 0) return;
+        if (fees == 0) return;
 
-        ERC20(rewardToken).safeTransfer(feeTo, surplus);
+        ERC20(rewardToken).safeTransfer(feeTo, fees);
 
-        emit CollectSurplus(feeTo, surplus);
+        emit CollectSurplus(feeTo, fees);
 
-        delete surplus;
+        delete fees;
     }
 }

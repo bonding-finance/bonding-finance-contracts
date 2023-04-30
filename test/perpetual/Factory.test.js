@@ -24,6 +24,27 @@ describe("Perpetual bond factory", function () {
         });
     });
 
+    describe("setPaused", function () {
+        it("Should revert if !owner", async function () {
+            const { factory, other, stETH } = await loadFixture(deployFixture);
+            await factory.createVault(stETH.address);
+            await expect(factory.connect(other).setPaused(true)).to.be.revertedWith(
+                "UNAUTHORIZED"
+            );
+        });
+
+        it("Should pause", async function () {
+            const { factory, stETH } = await loadFixture(deployFixture);
+            await factory.createVault(stETH.address);
+            const vaultAddress = await factory.getVault(stETH.address);
+            const Vault = await ethers.getContractFactory("PerpetualBondVault");
+            const vault = Vault.attach(vaultAddress);
+            await factory.setPaused(true);
+            await expect(vault.deposit(0)).to.be.revertedWith("paused");
+            await expect(vault.redeem(0)).to.be.revertedWith("paused");
+        });
+    });
+
     describe("setFeeTo", function () {
         it("Should revert if !owner", async function () {
             const { factory, other } = await loadFixture(deployFixture);
@@ -38,21 +59,30 @@ describe("Perpetual bond factory", function () {
         });
     });
 
-    describe("setFee", function () {
-        it("Should revert if !owner", async function () {
-            const { factory, other } = await loadFixture(deployFixture);
-            await expect(factory.connect(other).setFee(1)).to.be.revertedWith("UNAUTHORIZED");
+    describe("Set fees", function () {
+        describe("Validations", function () {
+            it("Should revert if !owner", async function () {
+                const { factory, other } = await loadFixture(deployFixture);
+                await expect(factory.connect(other).setVaultFee(1)).to.be.revertedWith(
+                    "UNAUTHORIZED"
+                );
+            });
+
+            it("Should revert if fee > 100", async function () {
+                const { factory } = await loadFixture(deployFixture);
+                await expect(factory.setVaultFee(101)).to.be.revertedWith("Fee > 100");
+                await expect(factory.setSurplusFee(10001)).to.be.revertedWith("Fee > 10000");
+            });
         });
 
-        it("Should revert if fee > 100", async function () {
-            const { factory } = await loadFixture(deployFixture);
-            await expect(factory.setFee(101)).to.be.revertedWith("Fee > 100");
-        });
-
-        it("Should set feeTo", async function () {
-            const { factory } = await loadFixture(deployFixture);
-            await factory.setFee(1);
-            expect((await factory.feeInfo()).fee).to.equal(1);
+        describe("Success", function () {
+            it("Should set fees", async function () {
+                const { factory } = await loadFixture(deployFixture);
+                await factory.setVaultFee(1);
+                await factory.setSurplusFee(1);
+                expect((await factory.feeInfo()).vaultFee).to.equal(1);
+                expect((await factory.feeInfo()).surplusFee).to.equal(1);
+            });
         });
     });
 

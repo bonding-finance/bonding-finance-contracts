@@ -78,12 +78,14 @@ contract EscrowedBondingFinanceToken is IEscrowedBondingFinanceToken, ERC20, Own
      * @param index Index of vests
      * @return amount Amount of claimable BND
      */
-    function claimable(address user, uint256 index) public view override returns (uint256 amount) {
-        VestingDetails memory info = userInfo[user][index];
-        uint256 currentClaimable = info.cumulativeClaimAmount - info.claimedAmount;
-        uint256 nextClaimable = _getNextClaimableAmount(user, index);
-
-        amount = currentClaimable + nextClaimable;
+    function claimable(address user, uint256 index) external view returns (uint256 amount) {
+        VestingDetails memory vestingDetails = userInfo[user][index];
+        amount = _claimable(
+            vestingDetails.vestingAmount,
+            vestingDetails.cumulativeClaimAmount,
+            vestingDetails.claimedAmount,
+            vestingDetails.lastVestingTime
+        );
     }
 
     function userInfoLength(address user) public view override returns (uint256) {
@@ -96,14 +98,21 @@ contract EscrowedBondingFinanceToken is IEscrowedBondingFinanceToken, ERC20, Own
      * @param i Index of vesting details
      */
     function _claim(address user, uint256 i) internal {
-        if (i >= userInfoLength(msg.sender)) return;
+        require(i < userInfoLength(user), "!valid");
 
-        _updateVesting(user, i);
+        VestingDetails storage vestingDetails = userInfo[user][i];
 
-        uint256 amount = claimable(user, i);
+        _updateVesting(vestingDetails);
+
+        uint256 amount = _claimable(
+            vestingDetails.vestingAmount,
+            vestingDetails.cumulativeClaimAmount,
+            vestingDetails.claimedAmount,
+            vestingDetails.lastVestingTime
+        );
         if (amount == 0) return;
 
-        userInfo[user][i].claimedAmount += amount;
+        vestingDetails.claimedAmount += amount;
         ERC20(bnd).transfer(user, amount);
 
         emit Claim(user, i, amount);
@@ -112,35 +121,63 @@ contract EscrowedBondingFinanceToken is IEscrowedBondingFinanceToken, ERC20, Own
     /**
      * @notice Updates vesting details
      * @dev Updates last vesting time and increments cumulative claim amount
-     * @param user User to claim for
-     * @param i Index of vesting details
+     * @param vestingDetails User's vesting details
      */
-    function _updateVesting(address user, uint256 i) internal {
-        uint256 amount = _getNextClaimableAmount(user, i);
-        userInfo[user][i].lastVestingTime = block.timestamp;
+    function _updateVesting(VestingDetails storage vestingDetails) internal {
+        uint256 amount = _getNextClaimableAmount(
+            vestingDetails.vestingAmount,
+            vestingDetails.cumulativeClaimAmount,
+            vestingDetails.lastVestingTime
+        );
+        vestingDetails.lastVestingTime = block.timestamp;
 
         if (amount == 0) return;
 
-        userInfo[user][i].cumulativeClaimAmount += amount;
+        vestingDetails.cumulativeClaimAmount += amount;
+    }
+
+    /**
+     * @notice Calculates amount of unlocked BND for `user` per vesting schedule
+     * @param vestingAmount Amount being vested
+     * @param cumulativeClaimAmount Total accumulated claim amount
+     * @param claimedAmount Amount claimed
+     * @param lastVestingTime Last vest timestamp
+     * @return amount Amount of claimable BND
+     */
+    function _claimable(
+        uint256 vestingAmount,
+        uint256 cumulativeClaimAmount,
+        uint256 claimedAmount,
+        uint256 lastVestingTime
+    ) internal view returns (uint256 amount) {
+        uint256 currentClaimable = cumulativeClaimAmount - claimedAmount;
+        uint256 nextClaimable = _getNextClaimableAmount(
+            vestingAmount,
+            cumulativeClaimAmount,
+            lastVestingTime
+        );
+
+        amount = currentClaimable + nextClaimable;
     }
 
     /**
      * @notice Calculates amount claimable since last claim
-     * @param user User to claim for
-     * @param i Index of vesting details
+     * @param vestingAmount Amount being vested
+     * @param cumulativeClaimAmount Total accumulated claim amount
+     * @param lastVestingTime Last vest timestamp
      * @return claimableAmount Amount of BND claimable since last claim
      */
     function _getNextClaimableAmount(
-        address user,
-        uint256 i
+        uint256 vestingAmount,
+        uint256 cumulativeClaimAmount,
+        uint256 lastVestingTime
     ) internal view returns (uint256 claimableAmount) {
-        VestingDetails memory info = userInfo[user][i];
-        if (info.vestingAmount == 0) return 0;
+        if (vestingAmount == 0 || vestingAmount == cumulativeClaimAmount) return 0;
 
-        uint256 timeDiff = block.timestamp - info.lastVestingTime;
-        claimableAmount = (info.vestingAmount * timeDiff) / vestingDuration;
-        if (claimableAmount + info.cumulativeClaimAmount > info.vestingAmount) {
-            return info.vestingAmount - info.cumulativeClaimAmount;
+        uint256 timeDiff = block.timestamp - lastVestingTime;
+        claimableAmount = (vestingAmount * timeDiff) / vestingDuration;
+        if (claimableAmount + cumulativeClaimAmount > vestingAmount) {
+            return vestingAmount - cumulativeClaimAmount;
         }
 
         return claimableAmount;

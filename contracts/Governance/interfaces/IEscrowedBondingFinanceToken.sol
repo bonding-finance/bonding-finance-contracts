@@ -28,7 +28,7 @@ interface IEscrowedBondingFinanceToken {
         returns (
             uint256 vestingAmount,
             uint256 cumulativeClaimAmount,
-            uint256 claimedAmunt,
+            uint256 claimedAmount,
             uint256 lastVestingTime
         );
 

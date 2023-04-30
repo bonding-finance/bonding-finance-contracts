@@ -60,7 +60,7 @@ describe("Perpetual bond staking", function () {
             expect(await staking.yToken()).to.equal(await vault.yToken());
             expect(await staking.lpToken()).to.equal(lpToken.address);
             expect(await staking.rewardToken()).to.equal(await vault.token());
-            expect(await staking.surplus()).to.equal(0);
+            expect(await staking.fees()).to.equal(0);
         });
     });
 
@@ -230,7 +230,7 @@ describe("Perpetual bond staking", function () {
                 expect(await staking.pendingRewards(yToken.address, owner.address)).to.equal(
                     numToBN(0.5)
                 );
-                expect(await staking.surplus()).to.equal(numToBN(0.5));
+                expect(await staking.fees()).to.equal(numToBN(0.5));
             });
 
             it("Should give half rewards to yToken and LP stakers", async function () {
@@ -266,7 +266,7 @@ describe("Perpetual bond staking", function () {
                     numToBN(1)
                 );
                 expect(await staking.pendingRewards(owner.address, lpToken.address)).to.equal(0);
-                expect(await staking.surplus()).to.equal(0);
+                expect(await staking.fees()).to.equal(0);
             });
 
             it("Should distribute only to bond stakers and protocol", async function () {
@@ -281,7 +281,7 @@ describe("Perpetual bond staking", function () {
                     numToBN(0.8)
                 );
                 expect(await staking.pendingRewards(owner.address, lpToken.address)).to.equal(0);
-                expect(await staking.surplus()).to.equal(numToBN(0.2));
+                expect(await staking.fees()).to.equal(numToBN(0.2));
             });
 
             it("Should distribute only to bond stakers and lp stakers", async function () {
@@ -300,7 +300,27 @@ describe("Perpetual bond staking", function () {
                 expect(await staking.pendingRewards(lpToken.address, owner.address)).to.equal(
                     numToBN(0.2)
                 );
-                expect(await staking.surplus()).to.equal(0);
+                expect(await staking.fees()).to.equal(0);
+            });
+
+            it("Should distribute only to bond stakers and lp stakers w/ protocol fee", async function () {
+                const { owner, factory, stETH, vault, yToken, lpToken, staking } =
+                    await createVault();
+                await factory.setSurplusFee(5000);
+                await factory.setStaking(vault.address, staking.address);
+                await vault.deposit(numToBN(10));
+                await staking.stake(yToken.address, numToBN(8));
+                await staking.stake(lpToken.address, numToBN(2));
+
+                await stETH.mint(vault.address, numToBN(1));
+                await staking.harvest();
+                expect(await staking.pendingRewards(yToken.address, owner.address)).to.equal(
+                    numToBN(0.8)
+                );
+                expect(await staking.fees()).to.equal(numToBN(0.1));
+                expect(await staking.pendingRewards(lpToken.address, owner.address)).to.equal(
+                    numToBN(0.1)
+                );
             });
         });
 
@@ -339,7 +359,7 @@ describe("Perpetual bond staking", function () {
             it("Should revert if msg.sender != factory", async function () {
                 const { other, staking } = await createVault();
                 await expect(
-                    staking.connect(other).collectSurplus(other.address)
+                    staking.connect(other).collectFees(other.address)
                 ).to.be.revertedWith("!factory");
             });
 
@@ -347,7 +367,7 @@ describe("Perpetual bond staking", function () {
                 const { factory, staking, stETH, vault } = await createVault();
                 await stETH.mint(vault.address, numToBN(1));
                 await staking.harvest();
-                await expect(factory.collectSurplus(staking.address)).to.be.revertedWith(
+                await expect(factory.collectSurplusFees(staking.address)).to.be.revertedWith(
                     "feeTo is 0"
                 );
             });
@@ -355,7 +375,7 @@ describe("Perpetual bond staking", function () {
             it("Should return early if surplus is 0", async function () {
                 const { factory, staking, feeTo } = await createVault();
                 await factory.setFeeTo(feeTo.address);
-                await expect(factory.collectSurplus(staking.address)).to.not.emit(
+                await expect(factory.collectSurplusFees(staking.address)).to.not.emit(
                     staking,
                     "CollectSurplus"
                 );
@@ -371,9 +391,9 @@ describe("Perpetual bond staking", function () {
                 await stETH.mint(vault.address, numToBN(1));
                 await staking.harvest();
                 await factory.setFeeTo(feeTo.address);
-                await factory.collectSurplus(staking.address);
+                await factory.collectSurplusFees(staking.address);
                 expect(await stETH.balanceOf(feeTo.address)).to.equal(numToBN(0.2));
-                expect(await staking.surplus()).to.equal(0);
+                expect(await staking.fees()).to.equal(0);
             });
         });
 
@@ -386,7 +406,7 @@ describe("Perpetual bond staking", function () {
                 await stETH.mint(vault.address, numToBN(1));
                 await staking.harvest();
                 await factory.setFeeTo(feeTo.address);
-                await expect(factory.collectSurplus(staking.address))
+                await expect(factory.collectSurplusFees(staking.address))
                     .to.emit(staking, "CollectSurplus")
                     .withArgs(feeTo.address, numToBN(0.2));
             });

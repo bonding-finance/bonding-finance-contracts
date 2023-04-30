@@ -56,7 +56,7 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
      * @return mintAmount Amount of dTokens and yTokens minted
      */
     function deposit(uint256 amount) external override nonReentrant returns (uint256 mintAmount) {
-        if (amount == 0) return 0;
+        _isNotPaused();
 
         ERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
@@ -78,7 +78,7 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
      * @return redeemAmount The amount of underlying tokens redeemed
      */
     function redeem(uint256 amount) external override nonReentrant returns (uint256 redeemAmount) {
-        if (amount == 0) return 0;
+        _isNotPaused();
 
         PerpetualBondToken(dToken).burn(msg.sender, amount);
         PerpetualBondToken(yToken).burn(msg.sender, amount);
@@ -124,13 +124,17 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
         rewards = balance - totalDeposits - fees;
     }
 
+    function _isNotPaused() internal view {
+        require(!IPerpetualBondFactory(factory).paused(), "paused");
+    }
+
     /**
-     * @notice Applies fee (if any) to `amount`
+     * @notice Applies vault fee (if any) to `amount`
      * @param amount The original amount
      * @return feeAmount The fee amount charged
      */
     function _chargeFee(uint256 amount) internal returns (uint256 feeAmount) {
-        (, uint256 fee) = IPerpetualBondFactory(factory).feeInfo();
+        (, uint256 fee, ) = IPerpetualBondFactory(factory).feeInfo();
         if (fee == 0) return 0;
 
         feeAmount = (amount * fee) / 10000;
@@ -143,20 +147,12 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
     /* Restricted Functions */
     //////////////////////////
 
-    /**
-     * @notice Sets the staking contract
-     * @param _staking Staking contract address
-     */
     function setStaking(address _staking) external override {
         require(msg.sender == factory, "!factory");
 
         staking = _staking;
     }
 
-    /**
-     * @notice Collects fees
-     * @param feeTo Address to send fees to
-     */
     function collectFees(address feeTo) external override {
         require(msg.sender == factory, "!factory");
 

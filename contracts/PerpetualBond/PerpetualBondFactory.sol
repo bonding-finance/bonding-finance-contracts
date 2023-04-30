@@ -10,6 +10,7 @@ import "../utils/Owned.sol";
  * @author Bonding Finance
  */
 contract PerpetualBondFactory is IPerpetualBondFactory, PerpetualBondDeployer, Owned {
+    bool public override paused;
     FeeInfo public override feeInfo;
     address[] public override allVaults;
 
@@ -40,34 +41,45 @@ contract PerpetualBondFactory is IPerpetualBondFactory, PerpetualBondDeployer, O
         emit VaultCreated(token, vault);
     }
 
+    function setPaused(bool _paused) external override onlyOwner {
+        paused = _paused;
+    }
+
     function setStaking(address vault, address staking) external override onlyOwner {
+        require(vault != address(0));
         require(staking != address(0));
         require(IPerpetualBondStaking(staking).vault() == vault, "!valid");
 
         IPerpetualBondVault(vault).setStaking(staking);
     }
 
-    function collectFees(address vault) external override onlyOwner {
+    function collectVaultFees(address vault) external override onlyOwner {
         require(vault != address(0));
         require(feeInfo.feeTo != address(0), "feeTo is 0");
 
         IPerpetualBondVault(vault).collectFees(feeInfo.feeTo);
     }
 
-    function collectSurplus(address staking) external override onlyOwner {
+    function collectSurplusFees(address staking) external override onlyOwner {
         require(staking != address(0));
         require(feeInfo.feeTo != address(0), "feeTo is 0");
 
-        IPerpetualBondStaking(staking).collectSurplus(feeInfo.feeTo);
+        IPerpetualBondStaking(staking).collectFees(feeInfo.feeTo);
     }
 
     function setFeeTo(address feeTo) external override onlyOwner {
         feeInfo.feeTo = feeTo;
     }
 
-    function setFee(uint256 fee) external override onlyOwner {
-        require(fee <= 100, "Fee > 100");
+    function setVaultFee(uint256 vaultFee) external override onlyOwner {
+        require(vaultFee <= 100, "Fee > 100");
 
-        feeInfo.fee = fee;
+        feeInfo.vaultFee = vaultFee;
+    }
+
+    function setSurplusFee(uint256 surplusFee) external override onlyOwner {
+        require(surplusFee <= 10000, "Fee > 10000");
+
+        feeInfo.surplusFee = surplusFee;
     }
 }
