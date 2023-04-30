@@ -28,6 +28,8 @@ interface IPerpetualBondFactory {
 
     function createVault(address token) external returns (address vault);
 
+    function setPaused(address vault, bool paused) external;
+
     function setStaking(address vault, address staking) external;
 
     function collectVaultFees(address vault) external;

@@ -39,7 +39,7 @@ describe("Perpetual bond vault", function () {
         return { owner, other, feeTo, factory, stETH, lpToken, vault, dToken, yToken, staking };
     }
 
-    describe("Mint", function () {
+    describe("Deposit", function () {
         describe("Validations", function () {
             it("Should revert if amount > balance", async function () {
                 const { vault } = await createVault();
@@ -49,11 +49,6 @@ describe("Perpetual bond vault", function () {
             it("Should not allow mint except by vault", async function () {
                 const { owner, yToken } = await createVault();
                 await expect(yToken.mint(owner.address, 1)).to.be.revertedWith("!vault");
-            });
-
-            it("Should return early if amount is 0", async function () {
-                const { vault } = await createVault();
-                await expect(vault.deposit(0)).to.not.emit(vault, "Mint");
             });
         });
 
@@ -100,11 +95,6 @@ describe("Perpetual bond vault", function () {
             it("Should not allow burn except by vault", async function () {
                 const { owner, yToken } = await createVault();
                 await expect(yToken.burn(owner.address, 1)).to.be.revertedWith("!vault");
-            });
-
-            it("Should return early if amount is 0", async function () {
-                const { vault } = await createVault();
-                await expect(vault.redeem(0)).to.not.emit(vault, "Redeem");
             });
         });
 
@@ -213,6 +203,15 @@ describe("Perpetual bond vault", function () {
         });
     });
 
+    describe("Set paused", function () {
+        describe("Validations", function () {
+            it("Should revert if msg.sender != factory", async function () {
+                const { vault } = await createVault();
+                await expect(vault.setPaused(true)).to.be.revertedWith("!factory");
+            });
+        });
+    });
+
     describe("Set staking", function () {
         describe("Validations", function () {
             it("Should revert if msg.sender != factory", async function () {
@@ -254,13 +253,18 @@ describe("Perpetual bond vault", function () {
             it("Should revert if feeTo is 0", async function () {
                 const { factory, stETH, vault } = await createVault();
                 await stETH.mint(vault.address, numToBN(1));
-                await expect(factory.collectVaultFees(vault.address)).to.be.revertedWith("feeTo is 0");
+                await expect(factory.collectVaultFees(vault.address)).to.be.revertedWith(
+                    "feeTo is 0"
+                );
             });
 
             it("Should return early if fees is 0", async function () {
                 const { feeTo, factory, vault } = await createVault();
                 await factory.setFeeTo(feeTo.address);
-                await expect(factory.collectVaultFees(vault.address)).to.not.emit(vault, "CollectFees");
+                await expect(factory.collectVaultFees(vault.address)).to.not.emit(
+                    vault,
+                    "CollectFees"
+                );
             });
         });
 

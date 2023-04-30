@@ -40,7 +40,12 @@ contract PerpetualBondFactory is IPerpetualBondFactory, PerpetualBondDeployer, O
         emit VaultCreated(token, vault);
     }
 
+    function setPaused(address vault, bool paused) external override onlyOwner {
+        IPerpetualBondVault(vault).setPaused(paused);
+    }
+
     function setStaking(address vault, address staking) external override onlyOwner {
+        require(vault != address(0));
         require(staking != address(0));
         require(IPerpetualBondStaking(staking).vault() == vault, "!valid");
 

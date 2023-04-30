@@ -24,11 +24,13 @@ contract PerpetualBondToken is IPerpetualBondToken, PerpetualBondTokenImpl {
 
     function mint(address user, uint256 amount) external override {
         _onlyVault();
+
         _mint(user, amount);
     }
 
     function burn(address user, uint256 amount) external override {
         _onlyVault();
+
         _burn(user, amount);
     }
 

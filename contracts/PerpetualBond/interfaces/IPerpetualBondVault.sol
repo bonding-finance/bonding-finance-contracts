@@ -11,6 +11,8 @@ interface IPerpetualBondVault {
     event Harvest(uint256 amount);
     event CollectFees(address indexed feeTo, uint256 amount);
 
+    function paused() external view returns (bool);
+
     function factory() external view returns (address);
 
     function token() external view returns (address);
@@ -36,6 +38,8 @@ interface IPerpetualBondVault {
     //////////////////////////
     /* Restricted Functions */
     //////////////////////////
+
+    function setPaused(bool paused) external;
 
     function setStaking(address staking) external;
 

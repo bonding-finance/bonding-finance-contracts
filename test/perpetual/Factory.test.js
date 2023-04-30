@@ -24,6 +24,31 @@ describe("Perpetual bond factory", function () {
         });
     });
 
+    describe("setPaused", function () {
+        it("Should revert if !owner", async function () {
+            const { factory, other, stETH } = await loadFixture(deployFixture);
+            await factory.createVault(stETH.address);
+            const vaultAddress = await factory.getVault(stETH.address);
+            const Vault = await ethers.getContractFactory("PerpetualBondVault");
+            const vault = Vault.attach(vaultAddress);
+            await expect(factory.connect(other).setPaused(vault.address, true)).to.be.revertedWith(
+                "UNAUTHORIZED"
+            );
+        });
+
+        it("Should pause", async function () {
+            const { factory, stETH } = await loadFixture(deployFixture);
+            await factory.createVault(stETH.address);
+            const vaultAddress = await factory.getVault(stETH.address);
+            const Vault = await ethers.getContractFactory("PerpetualBondVault");
+            const vault = Vault.attach(vaultAddress);
+            await factory.setPaused(vault.address, true);
+            expect(await vault.paused()).to.equal(true);
+            await expect(vault.deposit(0)).to.be.revertedWith("paused");
+            await expect(vault.redeem(0)).to.be.revertedWith("paused");
+        });
+    });
+
     describe("setFeeTo", function () {
         it("Should revert if !owner", async function () {
             const { factory, other } = await loadFixture(deployFixture);

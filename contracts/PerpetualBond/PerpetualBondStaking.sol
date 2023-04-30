@@ -239,10 +239,6 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
     /* Restricted Functions */
     //////////////////////////
 
-    /**
-     * @notice Collects surplus yield
-     * @param feeTo Address to send surplus to
-     */
     function collectFees(address feeTo) external override {
         require(msg.sender == factory, "!factory");
 
