@@ -19,7 +19,6 @@ import "../utils/ReentrancyGuard.sol";
 contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
     using SafeERC20 for ERC20;
 
-    bool public override paused;
     address public immutable override factory;
     address public immutable override token;
     address public immutable override dToken;
@@ -126,7 +125,7 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
     }
 
     function _isNotPaused() internal view {
-        require(!paused, "paused");
+        require(!IPerpetualBondFactory(factory).paused(), "paused");
     }
 
     /**
@@ -147,12 +146,6 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
     //////////////////////////
     /* Restricted Functions */
     //////////////////////////
-
-    function setPaused(bool _paused) external override {
-        require(msg.sender == factory, "!factory");
-
-        paused = _paused;
-    }
 
     function setStaking(address _staking) external override {
         require(msg.sender == factory, "!factory");

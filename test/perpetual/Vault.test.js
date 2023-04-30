@@ -203,15 +203,6 @@ describe("Perpetual bond vault", function () {
         });
     });
 
-    describe("Set paused", function () {
-        describe("Validations", function () {
-            it("Should revert if msg.sender != factory", async function () {
-                const { vault } = await createVault();
-                await expect(vault.setPaused(true)).to.be.revertedWith("!factory");
-            });
-        });
-    });
-
     describe("Set staking", function () {
         describe("Validations", function () {
             it("Should revert if msg.sender != factory", async function () {

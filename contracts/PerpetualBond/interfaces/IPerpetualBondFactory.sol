@@ -14,6 +14,8 @@ interface IPerpetualBondFactory {
         uint256 surplusFee;
     }
 
+    function paused() external view returns (bool);
+
     function feeInfo() external view returns (address feeTo, uint256 vaultFee, uint256 surplusFee);
 
     function allVaults(uint256) external view returns (address);
@@ -28,7 +30,7 @@ interface IPerpetualBondFactory {
 
     function createVault(address token) external returns (address vault);
 
-    function setPaused(address vault, bool paused) external;
+    function setPaused(bool paused) external;
 
     function setStaking(address vault, address staking) external;
 

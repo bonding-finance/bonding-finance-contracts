@@ -10,6 +10,7 @@ import "../utils/Owned.sol";
  * @author Bonding Finance
  */
 contract PerpetualBondFactory is IPerpetualBondFactory, PerpetualBondDeployer, Owned {
+    bool public override paused;
     FeeInfo public override feeInfo;
     address[] public override allVaults;
 
@@ -40,8 +41,8 @@ contract PerpetualBondFactory is IPerpetualBondFactory, PerpetualBondDeployer, O
         emit VaultCreated(token, vault);
     }
 
-    function setPaused(address vault, bool paused) external override onlyOwner {
-        IPerpetualBondVault(vault).setPaused(paused);
+    function setPaused(bool _paused) external override onlyOwner {
+        paused = _paused;
     }
 
     function setStaking(address vault, address staking) external override onlyOwner {
