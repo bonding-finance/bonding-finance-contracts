@@ -333,23 +333,21 @@ describe("Perpetual bond staking", function () {
                 await stETH.mint(vault.address, numToBN(1));
                 await expect(staking.harvest())
                     .to.emit(staking, "Distribute")
-                    .withArgs(yToken.address, (await time.latest()) + 1, numToBN(1), numToBN(10));
+                    .withArgs(yToken.address, numToBN(1), numToBN(10));
 
                 await staking.unstake(yToken.address, numToBN(2));
                 await stETH.mint(vault.address, numToBN(1));
                 await expect(staking.harvest())
                     .to.emit(staking, "Distribute")
-                    .withArgs(yToken.address, await time.latest(), numToBN(0.8), numToBN(8))
-                    .to.emit(staking, "Distribute")
-                    .withArgs(factory.address, await time.latest(), numToBN(0.2), 0);
+                    .withArgs(yToken.address, numToBN(0.8), numToBN(8));
 
                 await staking.stake(lpToken.address, numToBN(2));
                 await stETH.mint(vault.address, numToBN(1));
                 await expect(staking.harvest())
                     .to.emit(staking, "Distribute")
-                    .withArgs(yToken.address, await time.latest(), numToBN(0.8), numToBN(8))
+                    .withArgs(yToken.address, numToBN(0.8), numToBN(8))
                     .to.emit(staking, "Distribute")
-                    .withArgs(lpToken.address, await time.latest(), numToBN(0.2), numToBN(2));
+                    .withArgs(lpToken.address, numToBN(0.2), numToBN(2));
             });
         });
     });
@@ -358,9 +356,9 @@ describe("Perpetual bond staking", function () {
         describe("Validations", function () {
             it("Should revert if msg.sender != factory", async function () {
                 const { other, staking } = await createVault();
-                await expect(
-                    staking.connect(other).collectFees(other.address)
-                ).to.be.revertedWith("!factory");
+                await expect(staking.connect(other).collectFees(other.address)).to.be.revertedWith(
+                    "!factory"
+                );
             });
 
             it("Should revert if feeTo is 0", async function () {

@@ -172,7 +172,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
             yTokenPool.accRewardsPerShare += (yTokenRewards * 1e18) / yTokenStaked;
             yTokenPool.accRewards += yTokenRewards;
 
-            emit Distribute(yToken, block.timestamp, yTokenRewards, yTokenStaked);
+            emit Distribute(yToken, yTokenRewards, yTokenStaked);
         }
 
         // Distribute excess rewards to LP token stakers and protocol
@@ -186,7 +186,7 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
             lpTokenPool.accRewardsPerShare += (lpRewards * 1e18) / lpStaked;
             lpTokenPool.accRewards += lpRewards;
 
-            emit Distribute(lpToken, block.timestamp, lpRewards, lpStaked);
+            emit Distribute(lpToken, lpRewards, lpStaked);
         }
     }
 
@@ -231,8 +231,6 @@ contract PerpetualBondStaking is IPerpetualBondStaking, ReentrancyGuard {
         }
 
         fees += feeAmount;
-
-        emit Distribute(factory, block.timestamp, feeAmount, 0);
     }
 
     //////////////////////////
