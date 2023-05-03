@@ -33,6 +33,10 @@ module.exports = {
             url: "https://goerli-rollup.arbitrum.io/rpc",
             accounts: [process.env.PRIVATE_KEY],
         },
+        ethereum: {
+            url: "https://eth.llamarpc.com",
+            accounts: [process.env.PRIVATE_KEY],
+        }
     },
     etherscan: {
         apiKey: process.env.ETHERSCAN_API_KEY,
