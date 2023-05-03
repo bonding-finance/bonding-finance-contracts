@@ -21,7 +21,7 @@ interface IEscrowedBondingFinanceToken {
 
     function userInfo(
         address user,
-        uint256 i
+        uint256 index
     )
         external
         view
