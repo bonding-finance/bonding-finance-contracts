@@ -6,7 +6,7 @@ import "./interfaces/IPerpetualBondDeployer.sol";
 import "./PerpetualBondVault.sol";
 
 /**
- * @title Bonding Finance bond deployer contract
+ * @title Perpetual bond deployer contract
  * @author Bonding Finance
  */
 contract PerpetualBondDeployer is IPerpetualBondDeployer {

@@ -3,10 +3,10 @@
 pragma solidity ^0.8.0;
 
 /**
- * @title Perpetual bond token interface
+ * @title Bond token interface
  * @author Bonding Finance
  */
-interface IPerpetualBondToken {
+interface IBondToken {
     function vault() external view returns (address);
 
     //////////////////////////

@@ -23,7 +23,7 @@ describe("Perpetual bond staking", function () {
         const vaultAddress = await factory.getVault(stETH.address);
         const Vault = await ethers.getContractFactory("PerpetualBondVault");
         const vault = Vault.attach(vaultAddress);
-        const BondToken = await ethers.getContractFactory("PerpetualBondToken");
+        const BondToken = await ethers.getContractFactory("BondToken");
         const dToken = BondToken.attach(await vault.dToken());
         const yToken = BondToken.attach(await vault.yToken());
         const Staking = await ethers.getContractFactory("PerpetualBondStaking");

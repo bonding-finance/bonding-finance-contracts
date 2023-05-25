@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: BUSL-1.1
+
 pragma solidity >=0.8.0;
 
-import "./interfaces/IPerpetualBondToken.sol";
-import "./PerpetualBondTokenImpl.sol";
+import "./interfaces/IBondToken.sol";
+import "./BondTokenImpl.sol";
 
 /**
- * @title Perpetual bond token contract
+ * @title Bond token contract
  * @author Bonding Finance
  */
-contract PerpetualBondToken is IPerpetualBondToken, PerpetualBondTokenImpl {
+contract BondToken is IBondToken, BondTokenImpl {
     address public immutable override vault;
 
     constructor(string memory _name, string memory _symbol, uint8 _decimals) {
