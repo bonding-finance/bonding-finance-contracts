@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "./interfaces/IPerpetualBondVault.sol";
 import "./interfaces/IPerpetualBondFactory.sol";
 import "./interfaces/IPerpetualBondStaking.sol";
-import "./PerpetualBondToken.sol";
+import "../BondToken/BondToken.sol";
 import "./PerpetualBondDeployer.sol";
 import "../erc20/SafeERC20.sol";
 import "../erc20/ERC20.sol";
@@ -34,7 +34,7 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
         uint8 decimals = ERC20(token).decimals();
 
         dToken = address(
-            new PerpetualBondToken{salt: keccak256(abi.encode(token))}(
+            new BondToken{salt: keccak256(abi.encode(token))}(
                 string(abi.encodePacked(tokenSymbol, " Deposit Token")),
                 string(abi.encodePacked(tokenSymbol, "-D")),
                 decimals
@@ -42,7 +42,7 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
         );
 
         yToken = address(
-            new PerpetualBondToken{salt: keccak256(abi.encode(token))}(
+            new BondToken{salt: keccak256(abi.encode(token))}(
                 string(abi.encodePacked(tokenSymbol, " Yield Token")),
                 string(abi.encodePacked(tokenSymbol, "-Y")),
                 decimals
@@ -64,24 +64,22 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
         mintAmount = amount - feeAmount;
         totalDeposits += mintAmount;
 
-        PerpetualBondToken(dToken).mint(msg.sender, mintAmount);
-        PerpetualBondToken(yToken).mint(msg.sender, mintAmount);
+        BondToken(dToken).mint(msg.sender, mintAmount);
+        BondToken(yToken).mint(msg.sender, mintAmount);
 
         emit Mint(msg.sender, mintAmount);
-
-        return mintAmount;
     }
 
     /**
-     * @notice Redeem `amount` of dTokens and yTokens for underlying tokens
+     * @notice Burn `amount` of dTokens and yTokens for underlying tokens
      * @param amount Amount of dTokens and yTokens to burn
      * @return redeemAmount The amount of underlying tokens redeemed
      */
     function redeem(uint256 amount) external override nonReentrant returns (uint256 redeemAmount) {
         _isNotPaused();
 
-        PerpetualBondToken(dToken).burn(msg.sender, amount);
-        PerpetualBondToken(yToken).burn(msg.sender, amount);
+        BondToken(dToken).burn(msg.sender, amount);
+        BondToken(yToken).burn(msg.sender, amount);
         totalDeposits -= amount;
 
         uint256 feeAmount = _chargeFee(amount);
@@ -94,8 +92,6 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
         ERC20(token).safeTransfer(msg.sender, redeemAmount);
 
         emit Redeem(msg.sender, redeemAmount);
-
-        return redeemAmount;
     }
 
     /**
@@ -124,10 +120,6 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
         rewards = balance - totalDeposits - fees;
     }
 
-    function _isNotPaused() internal view {
-        require(!IPerpetualBondFactory(factory).paused(), "paused");
-    }
-
     /**
      * @notice Applies vault fee (if any) to `amount`
      * @param amount The original amount
@@ -139,8 +131,10 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
 
         feeAmount = (amount * fee) / 10000;
         fees += feeAmount;
+    }
 
-        return feeAmount;
+    function _isNotPaused() internal view {
+        require(!IPerpetualBondFactory(factory).paused(), "paused");
     }
 
     //////////////////////////

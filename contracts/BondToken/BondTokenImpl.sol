@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: BUSL-1.1
+
 pragma solidity >=0.8.0;
 
 /**
- * @title Perpetual bond token abstract contract
+ * @title Bond token abstract contract
  * @author Bonding Finance
  * @dev Modified from solmate (https://github.com/transmissions11/solmate/blob/main/src/tokens/ERC20.sol)
  */
-abstract contract PerpetualBondTokenImpl {
+abstract contract BondTokenImpl {
     /*//////////////////////////////////////////////////////////////
                                  EVENTS
     //////////////////////////////////////////////////////////////*/
