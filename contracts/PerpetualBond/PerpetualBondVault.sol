@@ -85,11 +85,7 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
         uint256 feeAmount = _chargeFee(amount);
         redeemAmount = amount - feeAmount;
 
-        uint256 balance = ERC20(token).balanceOf(address(this));
-        // In case of rounding error
-        if (redeemAmount > balance) redeemAmount = balance;
-
-        ERC20(token).safeTransfer(msg.sender, redeemAmount);
+        _safeTransfer(msg.sender, redeemAmount);
 
         emit Redeem(msg.sender, redeemAmount);
     }
@@ -104,7 +100,7 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
         uint256 amount = pendingRewards();
         if (amount == 0) return;
 
-        ERC20(token).safeTransfer(staking, amount);
+        _safeTransfer(staking, amount);
 
         emit Harvest(amount);
     }
@@ -131,6 +127,19 @@ contract PerpetualBondVault is IPerpetualBondVault, ReentrancyGuard {
 
         feeAmount = (amount * fee) / 10000;
         fees += feeAmount;
+    }
+
+    /**
+     * @notice Safely transfers token to `to` while ensuring amount doesn't exceed balance
+     * @param to Address to transfer to
+     * @param amount Amount of `token` to transfer
+     */
+    function _safeTransfer(address to, uint256 amount) internal {
+        uint256 balance = ERC20(token).balanceOf(address(this));
+        // In case of rounding error
+        if (amount > balance) amount = balance;
+
+        ERC20(token).safeTransfer(to, amount);
     }
 
     function _isNotPaused() internal view {
